@@ -277,6 +277,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
   },
+  // region Rewards Screen
   rewardsHeader: {
     backgroundColor: '#2563EB',
     paddingTop: 48,
@@ -310,14 +311,12 @@ export const styles = StyleSheet.create({
   },
   gameBanner: {
     backgroundColor: '#9333EA',
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
+    padding: 15,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    zIndex: 10,
   },
   gameBannerContent: {
     flexDirection: 'row',
@@ -387,6 +386,134 @@ export const styles = StyleSheet.create({
   redeemButtonTextDisabled: {
     color: '#6B7280',
   },
+  // endregion
+
+  // region Game Dropdown
+  dropdownContainer: {
+    // Keep the dropdown within the content area
+    marginBottom: 20,
+    borderRadius: 12,
+    overflow: 'hidden', // Ensures the dropdown list stays within bounds
+  },
+  dropdownList: {
+    backgroundColor: '#842ed4ff', // White background
+    borderWidth: 1,
+    borderColor: '#E5E7EB', // Light gray border
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    marginTop: -12, // Overlap slightly with the header for a clean look
+    paddingTop: 12, // Push content down past the overlap
+    paddingHorizontal: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6', // Very light gray separator
+  },
+  dropdownItemTextContainer: {
+    marginLeft: 10,
+    flex: 1,
+  },
+  dropdownItemTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937', // Dark text
+  },
+  dropdownItemSubtitle: {
+    fontSize: 13,
+    color: '#090909ff', // Gray text for bonus
+    marginTop: 2,
+  },
+  // endregion
+
+  // region Game Modal
+  gameHubTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1F2937',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  gameHubSubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  gameGridContainer: {
+    paddingHorizontal: 10, // Padding around the entire grid
+    paddingBottom: 20,
+  },
+  gameGridRow: {
+    justifyContent: 'space-between', // Distribute items evenly
+    marginBottom: 10, // Space between rows
+  },
+  gameGridItem: {
+    flex: 1, // Allows items to take equal space in a row
+    marginHorizontal: 5, // Small gap between items
+    backgroundColor: '#FFFFFF', // White background for each game box
+    borderRadius: 15, // Curved edges
+    padding: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    minHeight: 150, // Ensure items have a minimum height
+  },
+  gameGridImagePlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: 30, // Circular placeholder for image
+    backgroundColor: '#EBF4FF', // Light blue background
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  gameGridImage: {
+    width: '100%', // Adjust if using actual images
+    height: '100%',
+    borderRadius: 30,
+    resizeMode: 'contain',
+  },
+  gameGridTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  gameGridPoints: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#10B981', // Green for points
+    textAlign: 'center',
+  },
+  backToHubButton: {
+    backgroundColor: '#6B7280', // Gray color
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginTop: 15,
+  },
+  backToHubButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // endregion 
+
+  
   accountHeader: {
     backgroundColor: '#2563EB',
     paddingTop: 48,
@@ -549,4 +676,49 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
+  //region Pipeline Game 
+  pipelineGameArea: {
+    alignItems: 'center',
+    padding: 10,
+    width: '100%',
+  },
+  movesText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#3B82F6',
+    marginBottom: 15,
+  },
+  pipeLabel: {
+    position: 'absolute',
+    fontSize: 24,
+    // Ensure the labels don't rotate with the tile
+    transform: [{ rotate: '0deg' }], 
+  },
+  pipelineGrid: {
+    width: '100%',
+    aspectRatio: 1, // Ensure the grid is square
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  pipeTile: {
+    width: `${100 / 4}%`, // 4x4 grid
+    height: `${100 / 4}%`, 
+    padding: 5,
+    backgroundColor: '#F9FAFB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Apply tile border to differentiate segments if needed
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  pipeImage: {
+    width: '100%', // Match the tile size
+    height: '100%', // Match the tile size
+    resizeMode: 'contain', // Ensure the image fits inside the bounds
+},
+  // endregion
 });
