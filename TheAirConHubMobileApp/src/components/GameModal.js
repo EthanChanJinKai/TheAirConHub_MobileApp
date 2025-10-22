@@ -9,7 +9,7 @@ import {
   ScrollView,
   Image,
   FlatList,
-} from "react-native"; // Import Image and FlatList
+} from "react-native";
 import {
   Sparkles,
   X,
@@ -19,7 +19,7 @@ import {
   Wrench,
   Search,
   CloudOff,
-} from "lucide-react-native"; // Add more game-specific icons
+} from "lucide-react-native";
 import IPipe from "../../assets/ipipe.png";
 import CrossPipe from "../../assets/crosspipe.png";
 import LPipe from "../../assets/lpipe.png";
@@ -52,7 +52,6 @@ const TapChallengeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     if (newScore >= 100) {
       setGameActive(false);
       if (!isPracticeMode) {
-        // Only earn points if not in practice mode
         onEarnPoints(newScore);
       }
     }
@@ -114,17 +113,20 @@ const TapChallengeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 
 // region Broken Pipeline
 const PIPE_TYPES = [
-  { rotations: [0, 90],
+  {
+    rotations: [0, 90],
     image: IPipe,
-    style: { borderWidth: 0, borderTopWidth: 4, borderBottomWidth: 4 }
+    style: { borderWidth: 0, borderTopWidth: 4, borderBottomWidth: 4 },
   }, // I-Pipe
-  { rotations: [0, 90, 180, 270],
+  {
+    rotations: [0, 90, 180, 270],
     image: CrossPipe,
-    style: { borderWidth: 4 }
+    style: { borderWidth: 4 },
   }, // Cross-Pipe
-  { rotations: [0, 90, 180, 270],
+  {
+    rotations: [0, 90, 180, 270],
     image: LPipe,
-    style: { borderTopWidth: 4, borderRightWidth: 4 }
+    style: { borderTopWidth: 4, borderRightWidth: 4 },
   }, // L-Pipe (Corner)
 ];
 const GRID_SIZE = 4;
@@ -138,27 +140,38 @@ const hasConnection = (tile, direction) => {
   const rotation = tile.rotation;
   const typeIndex = tile.typeIndex;
 
-  // Cross-Pipe connects in all directions
-  if (typeIndex === 2) {
+  // I-Pipe (index 0)
+  if (typeIndex === 0) {
+    if (rotation === 0 || rotation === 180) {
+      const result = direction === "T" || direction === "B";
+      console.log(`    I-Pipe (rot ${rotation}): ${direction} = ${result}`);
+      return result;
+    }
+    if (rotation === 90 || rotation === 270) {
+      const result = direction === "L" || direction === "R";
+      console.log(`    I-Pipe (rot ${rotation}): ${direction} = ${result}`);
+      return result;
+    }
+  }
+
+  // Cross-Pipe (index 1)
+  if (typeIndex === 1) {
+    console.log(`    Cross-Pipe: ${direction} = true (all directions)`);
     return true;
   }
-  
-  // L-Pipe logic
-  if (typeIndex === 1) {
-    if (rotation === 0) return direction === "T" || direction === "R";
-    if (rotation === 90) return direction === "R" || direction === "B";
-    if (rotation === 180) return direction === "B" || direction === "L";
-    if (rotation === 270) return direction === "L" || direction === "T";
+
+  // L-Pipe logic (index 2)
+  if (typeIndex === 2) {
+    let result = false;
+    if (rotation === 0) result = direction === "T" || direction === "R";
+    else if (rotation === 90) result = direction === "R" || direction === "B";
+    else if (rotation === 180) result = direction === "B" || direction === "L";
+    else if (rotation === 270) result = direction === "L" || direction === "T";
+    console.log(`    L-Pipe (rot ${rotation}): ${direction} = ${result}`);
+    return result;
   }
-  
-  // I-Pipe logic
-  if (typeIndex === 0) {
-    if (rotation === 0 || rotation === 180)
-      return direction === "T" || direction === "B";
-    if (rotation === 90 || rotation === 270)
-      return direction === "L" || direction === "R";
-  }
-  
+
+  console.log(`    Unknown pipe type ${typeIndex}: ${direction} = false`);
   return false;
 };
 
@@ -168,15 +181,28 @@ const isPathConnected = (currentGrid) => {
   const queue = [START_INDEX];
   visited[START_INDEX] = true;
 
+  console.log('=== PATHFINDING DEBUG ===');
+  console.log('Starting pathfinding from index:', START_INDEX);
+  console.log('Target end index:', END_INDEX);
+
   while (queue.length > 0) {
     const currentIndex = queue.shift();
     const currentTile = currentGrid[currentIndex];
+    
+    console.log(`Checking tile ${currentIndex}:`, {
+      typeIndex: currentTile.typeIndex,
+      rotation: currentTile.rotation,
+      row: Math.floor(currentIndex / GRID_SIZE),
+      col: currentIndex % GRID_SIZE
+    });
+    
     if (currentIndex === END_INDEX) {
+      console.log('✅ PATH FOUND! Reached the end!');
       return true; // Path found!
     }
 
     const row = Math.floor(currentIndex / GRID_SIZE);
-    const col = currentIndex % GRID_SIZE; // Possible moves (neighbor indices and connection directions)
+    const col = currentIndex % GRID_SIZE;
 
     const neighbors = [
       {
@@ -206,38 +232,46 @@ const isPathConnected = (currentGrid) => {
       direction,
       requiredNeighborConnection,
     } of neighbors) {
-      // --- CORRECTED BOUNDARY CHECK LOGIC ---
-      // 1. Check if neighbor index is valid (0 to 15)
+      // Check if neighbor index is valid (0 to 15)
       if (neighborIndex < 0 || neighborIndex >= currentGrid.length) {
         continue;
       }
 
-      // 2. Prevent horizontal wrapping (e.g., index 3 trying to connect to index 4 via 'R')
-      // Right move check: If current column is the right edge (col 3) AND the direction is 'R', skip.
+      // Prevent horizontal wrapping
       if (direction === "R" && col === GRID_SIZE - 1) {
         continue;
       }
-      // Left move check: If current column is the left edge (col 0) AND the direction is 'L', skip.
       if (direction === "L" && col === 0) {
         continue;
       }
-      // --- END CORRECTED BOUNDARY CHECK LOGIC ---
+
       if (!visited[neighborIndex]) {
-        const neighborTile = currentGrid[neighborIndex]; // 1. Check if the current tile connects to the neighbor
-        const currentConnects = hasConnection(currentTile, direction); // 2. Check if the neighbor tile connects back to the current tile
+        const neighborTile = currentGrid[neighborIndex];
+        const currentConnects = hasConnection(currentTile, direction);
         const neighborConnects = hasConnection(
           neighborTile,
           requiredNeighborConnection
         );
 
+        console.log(`  Checking neighbor ${neighborIndex} (${direction}):`, {
+          currentConnects,
+          neighborConnects,
+          neighborType: neighborTile.typeIndex,
+          neighborRotation: neighborTile.rotation
+        });
+
         if (currentConnects && neighborConnects) {
+          console.log(`  ✅ Connected to tile ${neighborIndex}`);
           visited[neighborIndex] = true;
           queue.push(neighborIndex);
+        } else {
+          console.log(`  ❌ Not connected to tile ${neighborIndex}`);
         }
       }
     }
   }
 
+  console.log('❌ NO PATH FOUND');
   return false; // No path found
 };
 
@@ -245,35 +279,159 @@ const createInitialGrid = () => {
   return Array.from({ length: GRID_SIZE * GRID_SIZE }, () => {
     const typeIndex = Math.floor(Math.random() * PIPE_TYPES.length);
     const type = PIPE_TYPES[typeIndex];
-    const randomRotation = type.rotations[Math.floor(Math.random() * type.rotations.length)];
-    
+    const randomRotation =
+      type.rotations[Math.floor(Math.random() * type.rotations.length)];
+
     return {
       typeIndex: typeIndex,
-      rotation: randomRotation
+      rotation: randomRotation,
     };
   });
 };
 
+// Helper to create a SOLVABLE grid
+const createSolvableGrid = () => {
+  const grid = Array.from({ length: GRID_SIZE * GRID_SIZE }, () => ({
+    typeIndex: 0,
+    rotation: 0,
+  }));
+
+  // Step 1: Create a guaranteed path from START to END
+  const path = [];
+  let current = START_INDEX;
+  path.push(current);
+
+  // Simple path algorithm: move right and down randomly
+  while (current !== END_INDEX) {
+    const row = Math.floor(current / GRID_SIZE);
+    const col = current % GRID_SIZE;
+    
+    const canGoRight = col < GRID_SIZE - 1;
+    const canGoDown = row < GRID_SIZE - 1;
+    
+    if (!canGoRight && !canGoDown) break; // Shouldn't happen
+    
+    let nextMove;
+    if (!canGoRight) {
+      nextMove = 'down';
+    } else if (!canGoDown) {
+      nextMove = 'right';
+    } else {
+      // Randomly choose
+      nextMove = Math.random() < 0.5 ? 'right' : 'down';
+    }
+    
+    if (nextMove === 'right') {
+      current = current + 1;
+    } else {
+      current = current + GRID_SIZE;
+    }
+    
+    path.push(current);
+  }
+
+  // Step 2: Place correct pipes along the path
+  for (let i = 0; i < path.length; i++) {
+    const index = path[i];
+    const row = Math.floor(index / GRID_SIZE);
+    const col = index % GRID_SIZE;
+    
+    const prevIndex = i > 0 ? path[i - 1] : null;
+    const nextIndex = i < path.length - 1 ? path[i + 1] : null;
+    
+    // Determine which directions we need to connect
+    let needsTop = false, needsBottom = false, needsLeft = false, needsRight = false;
+    
+    if (prevIndex !== null) {
+      if (prevIndex === index - GRID_SIZE) needsTop = true;
+      if (prevIndex === index + GRID_SIZE) needsBottom = true;
+      if (prevIndex === index - 1) needsLeft = true;
+      if (prevIndex === index + 1) needsRight = true;
+    }
+    
+    if (nextIndex !== null) {
+      if (nextIndex === index - GRID_SIZE) needsTop = true;
+      if (nextIndex === index + GRID_SIZE) needsBottom = true;
+      if (nextIndex === index - 1) needsLeft = true;
+      if (nextIndex === index + 1) needsRight = true;
+    }
+    
+    // Choose appropriate pipe type and rotation
+    const connections = [needsTop, needsRight, needsBottom, needsLeft];
+    const connectionCount = connections.filter(c => c).length;
+    
+    if (connectionCount === 2) {
+      // Check if straight or corner
+      if ((needsTop && needsBottom) || (needsLeft && needsRight)) {
+        // Straight pipe (I-Pipe)
+        grid[index].typeIndex = 0;
+        grid[index].rotation = (needsTop && needsBottom) ? 0 : 90;
+      } else {
+        // Corner pipe (L-Pipe)
+        grid[index].typeIndex = 2;
+        if (needsTop && needsRight) grid[index].rotation = 0;
+        else if (needsRight && needsBottom) grid[index].rotation = 90;
+        else if (needsBottom && needsLeft) grid[index].rotation = 180;
+        else if (needsLeft && needsTop) grid[index].rotation = 270;
+      }
+    }
+  }
+
+  // Step 3: Fill remaining tiles with random pipes
+  for (let i = 0; i < grid.length; i++) {
+    if (!path.includes(i)) {
+      const typeIndex = Math.floor(Math.random() * PIPE_TYPES.length);
+      const type = PIPE_TYPES[typeIndex];
+      grid[i].typeIndex = typeIndex;
+      grid[i].rotation = type.rotations[Math.floor(Math.random() * type.rotations.length)];
+    }
+  }
+
+  // Step 4: Scramble the path tiles (rotate them randomly but not to correct position)
+  for (let i = 0; i < path.length; i++) {
+    const index = path[i];
+    // Skip START and END tiles - we'll set those separately
+    if (index === START_INDEX || index === END_INDEX) continue;
+    
+    const type = PIPE_TYPES[grid[index].typeIndex];
+    const correctRotation = grid[index].rotation;
+    
+    // Get other possible rotations (not the correct one)
+    const otherRotations = type.rotations.filter(r => r !== correctRotation);
+    if (otherRotations.length > 0) {
+      grid[index].rotation = otherRotations[Math.floor(Math.random() * otherRotations.length)];
+    }
+  }
+
+  return grid;
+};
+
 // Helper to create a grid, but ensuring the start/end tiles are visually distinct
 const createInitialGridWithStartEnd = () => {
-  const grid = createInitialGrid();
+  const grid = createSolvableGrid();
 
-  // Ensure the Start and End tiles are L-pipes for a clear visual boundary
-  grid[START_INDEX].typeIndex = 1;
-  grid[END_INDEX].typeIndex = 1;
+  // Set Start tile as Cross-Pipe (connects in all directions)
+  grid[START_INDEX].typeIndex = 1; // Cross-Pipe
+  grid[START_INDEX].rotation = 0; // Rotation doesn't matter for cross pipe
 
-  // Lock the rotation of Start/End tiles for a clean visual target
-  grid[START_INDEX].rotation = 90; // Exiting Right/Bottom
-  grid[END_INDEX].rotation = 270; // Accepting Top/Left (inverted L)
+  // Set End tile as Cross-Pipe (connects in all directions)
+  grid[END_INDEX].typeIndex = 1; // Cross-Pipe
+  grid[END_INDEX].rotation = 0; // Rotation doesn't matter for cross pipe
 
   return grid;
 };
 
 const BrokenPipelineGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
-  // Use the new grid initialization function
   const [grid, setGrid] = useState(createInitialGridWithStartEnd());
   const [gameWon, setGameWon] = useState(false);
   const [moves, setMoves] = useState(0);
+
+  // Function to start a new game
+  const startNewGame = () => {
+    setGrid(createInitialGridWithStartEnd());
+    setGameWon(false);
+    setMoves(0);
+  };
 
   // Pathfinding is now the win condition
   const checkWinCondition = useCallback(
@@ -306,17 +464,16 @@ const BrokenPipelineGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     });
 
     setMoves((prevMoves) => prevMoves + 1);
-    // Check win condition immediately after state update (using local copy for speed)
     checkWinCondition(newGrid);
   };
 
   const renderTile = (tile, index) => {
-    const pipeType = PIPE_TYPES[tile.typeIndex]; // Changed from pipeStyle to pipeType
+    const pipeType = PIPE_TYPES[tile.typeIndex];
 
     // Highlight start/end points
     const isStart = index === START_INDEX;
     const isEnd = index === END_INDEX;
-    const tileColor = isStart ? "#FBBF24" : isEnd ? "#EF4444" : "#F9FAFB"; // Yellow start, Red end
+    const tileColor = isStart ? "#FBBF24" : isEnd ? "#EF4444" : "#F9FAFB";
 
     return (
       <TouchableOpacity
@@ -328,16 +485,16 @@ const BrokenPipelineGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
           },
         ]}
         onPress={() => handleTilePress(index)}
-        disabled={gameWon || isStart || isEnd} // Lock Start/End Tiles
+        disabled={gameWon || isStart || isEnd}
       >
         {pipeType.image ? (
           <Image
             source={pipeType.image}
+            resizeMode="contain"
             style={[
               styles.pipeImage,
               {
                 transform: [{ rotate: `${tile.rotation}deg` }],
-                tintColor: gameWon ? "#10B981" : isStart || isEnd ? "#1F2937" : "#3B82F6",
               },
             ]}
           />
@@ -351,7 +508,7 @@ const BrokenPipelineGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
                   ? "#10B981"
                   : isStart || isEnd
                   ? "#1F2937"
-                  : "#3B82F6",
+                  : "#3bb8f6ff",
                 opacity: isStart || isEnd ? 1 : 0.8,
                 transform: [{ rotate: `${tile.rotation}deg` }],
               },
@@ -386,7 +543,15 @@ const BrokenPipelineGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
         </View>
       ) : (
         <View style={styles.pipelineGameArea}>
-          <Text style={styles.movesText}>Moves: {moves}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: 15 }}>
+            <Text style={styles.movesText}>Moves: {moves}</Text>
+            <TouchableOpacity 
+              style={{ backgroundColor: '#6B7280', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}
+              onPress={startNewGame}
+            >
+              <Text style={{ color: 'white', fontWeight: '600', fontSize: 14 }}>New Game</Text>
+            </TouchableOpacity>
+          </View>
           <View style={styles.pipelineGrid}>
             {grid.map((tile, index) => renderTile(tile, index))}
           </View>
@@ -414,7 +579,6 @@ const WheelOfFortuneGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 
 // --- GameHubScreen with Grid Layout ---
 const GameHubScreen = ({ games, onSelectGame, currentSlotKey }) => {
-  // Determine if the current slot is a practice slot
   const isPracticeMode = currentSlotKey === "practice";
 
   const renderGameGridItem = ({ item: game }) => (
@@ -423,9 +587,7 @@ const GameHubScreen = ({ games, onSelectGame, currentSlotKey }) => {
       style={styles.gameGridItem}
       onPress={() => onSelectGame(game.key)}
     >
-      {/* Placeholder for Game Image (replace with actual image later) */}
       <View style={styles.gameGridImagePlaceholder}>
-        {/* You'd replace this with <Image source={game.image} style={styles.gameGridImage} /> */}
         {game.iconComponent}
       </View>
       <Text style={styles.gameGridTitle}>{game.name}</Text>
@@ -448,18 +610,16 @@ const GameHubScreen = ({ games, onSelectGame, currentSlotKey }) => {
         data={games}
         renderItem={renderGameGridItem}
         keyExtractor={(item) => item.key}
-        numColumns={2} // Grid with 2 columns
-        columnWrapperStyle={styles.gameGridRow} // Style for rows
-        contentContainerStyle={styles.gameGridContainer} // Container for the grid
+        numColumns={2}
+        columnWrapperStyle={styles.gameGridRow}
+        contentContainerStyle={styles.gameGridContainer}
       />
     </View>
   );
 };
-// -------------------------------------------------------------------------
 
 const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
   const [activeGameKey, setActiveGameKey] = useState(initialGameKey || null);
-  // Store the initial slot key to pass down to games (for practice mode checks)
   const [currentSlotKey, setCurrentSlotKey] = useState(initialGameKey || null);
 
   const minigames = [
@@ -497,25 +657,24 @@ const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
 
   useEffect(() => {
     if (visible) {
-      setActiveGameKey(null); // Always start at the hub when modal opens
-      setCurrentSlotKey(initialGameKey); // Set the current slot key
+      setActiveGameKey(null);
+      setCurrentSlotKey(initialGameKey);
     } else {
-      setCurrentSlotKey(null); // Clear slot key when modal closes
+      setCurrentSlotKey(null);
     }
   }, [visible, initialGameKey]);
 
   const renderActiveGame = () => {
-    const handleEndGame = () => setActiveGameKey(null); // Return to the Hub
-    // Check if the current slot is practice mode to pass down to game components
+    const handleEndGame = () => setActiveGameKey(null);
     const isPracticeMode = currentSlotKey === "practice";
 
     switch (activeGameKey) {
       case "tap":
         return (
           <TapChallengeGame
-            onEarnPoints={(points) => onEarnPoints(points, currentSlotKey)} // Pass slot key with points
+            onEarnPoints={(points) => onEarnPoints(points, currentSlotKey)}
             onEndGame={handleEndGame}
-            isPracticeMode={isPracticeMode} // Pass practice mode status
+            isPracticeMode={isPracticeMode}
           />
         );
       case "sequence":
@@ -550,17 +709,12 @@ const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
             isPracticeMode={isPracticeMode}
           />
         );
-
-      // You would add more cases here for your other games:
-      // case 'wheel': return <WheelOfFortuneGame onEarnPoints={(points) => onEarnPoints(points, currentSlotKey)} onEndGame={handleEndGame} isPracticeMode={isPracticeMode} />;
-      // case 'sequence': return <BrokenPipelineGame onEarnPoints={(points) => onEarnPoints(points, currentSlotKey)} onEndGame={handleEndGame} isPracticeMode={isPracticeMode} />;
-      // ...
       default:
         return (
           <GameHubScreen
             games={minigames}
             onSelectGame={setActiveGameKey}
-            currentSlotKey={currentSlotKey} // Pass current slot key to the hub
+            currentSlotKey={currentSlotKey}
           />
         );
     }

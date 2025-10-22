@@ -28,10 +28,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#2563EB',
     padding: 16,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
     elevation: 8,
   },
   toastText: {
@@ -49,10 +46,7 @@ export const styles = StyleSheet.create({
     height: 120,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 3,
   },
   serviceIconContainer: {
@@ -73,10 +67,7 @@ export const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#F3F4F6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
     elevation: 2,
   },
   bookingHeader: {
@@ -132,10 +123,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
     elevation: 2,
   },
   menuContent: {
@@ -202,10 +190,7 @@ export const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)',
     elevation: 5,
   },
   rewardsBannerContent: {
@@ -289,10 +274,7 @@ export const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)',
     elevation: 5,
   },
   pointsValue: {
@@ -346,10 +328,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
     elevation: 2,
   },
   rewardInfo: {
@@ -390,24 +369,20 @@ export const styles = StyleSheet.create({
 
   // region Game Dropdown
   dropdownContainer: {
-    // Keep the dropdown within the content area
     marginBottom: 20,
     borderRadius: 12,
-    overflow: 'hidden', // Ensures the dropdown list stays within bounds
+    overflow: 'hidden',
   },
   dropdownList: {
-    backgroundColor: '#842ed4ff', // White background
+    backgroundColor: '#842ed4ff',
     borderWidth: 1,
-    borderColor: '#E5E7EB', // Light gray border
+    borderColor: '#E5E7EB',
     borderBottomLeftRadius: 12,
     borderBottomRightRadius: 12,
-    marginTop: -12, // Overlap slightly with the header for a clean look
-    paddingTop: 12, // Push content down past the overlap
+    marginTop: -12,
+    paddingTop: 12,
     paddingHorizontal: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.1)',
     elevation: 3,
   },
   dropdownItem: {
@@ -416,7 +391,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6', // Very light gray separator
+    borderBottomColor: '#F3F4F6',
   },
   dropdownItemTextContainer: {
     marginLeft: 10,
@@ -425,11 +400,11 @@ export const styles = StyleSheet.create({
   dropdownItemTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937', // Dark text
+    color: '#1F2937',
   },
   dropdownItemSubtitle: {
     fontSize: 13,
-    color: '#090909ff', // Gray text for bonus
+    color: '#090909ff',
     marginTop: 2,
   },
   // endregion
@@ -449,42 +424,38 @@ export const styles = StyleSheet.create({
     marginBottom: 20,
   },
   gameGridContainer: {
-    paddingHorizontal: 10, // Padding around the entire grid
+    paddingHorizontal: 10,
     paddingBottom: 20,
   },
   gameGridRow: {
-    justifyContent: 'space-between', // Distribute items evenly
-    marginBottom: 10, // Space between rows
+    justifyContent: 'space-between',
+    marginBottom: 10,
   },
   gameGridItem: {
-    flex: 1, // Allows items to take equal space in a row
-    marginHorizontal: 5, // Small gap between items
-    backgroundColor: '#FFFFFF', // White background for each game box
-    borderRadius: 15, // Curved edges
+    flex: 1,
+    marginHorizontal: 5,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 15,
     padding: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 3,
-    minHeight: 150, // Ensure items have a minimum height
+    minHeight: 150,
   },
   gameGridImagePlaceholder: {
     width: 60,
     height: 60,
-    borderRadius: 30, // Circular placeholder for image
-    backgroundColor: '#EBF4FF', // Light blue background
+    borderRadius: 30,
+    backgroundColor: '#EBF4FF',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
   },
   gameGridImage: {
-    width: '100%', // Adjust if using actual images
+    width: '100%',
     height: '100%',
     borderRadius: 30,
-    resizeMode: 'contain',
   },
   gameGridTitle: {
     fontSize: 16,
@@ -496,11 +467,11 @@ export const styles = StyleSheet.create({
   gameGridPoints: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: '#10B981', // Green for points
+    color: '#10B981',
     textAlign: 'center',
   },
   backToHubButton: {
-    backgroundColor: '#6B7280', // Gray color
+    backgroundColor: '#6B7280',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -511,9 +482,11 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  // endregion 
+  gameHubList: {
+    width: '100%',
+  },
+  // endregion
 
-  
   accountHeader: {
     backgroundColor: '#2563EB',
     paddingTop: 48,
@@ -526,10 +499,7 @@ export const styles = StyleSheet.create({
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)',
     elevation: 5,
   },
   profileAvatarContainer: {
@@ -638,10 +608,7 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 3,
     zIndex: 10,
   },
@@ -658,10 +625,7 @@ export const styles = StyleSheet.create({
     height: 64,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
     elevation: 8,
   },
   successMessage: {
@@ -676,7 +640,7 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  //region Pipeline Game 
+  // region Pipeline Game
   pipelineGameArea: {
     alignItems: 'center',
     padding: 10,
@@ -691,12 +655,11 @@ export const styles = StyleSheet.create({
   pipeLabel: {
     position: 'absolute',
     fontSize: 24,
-    // Ensure the labels don't rotate with the tile
-    transform: [{ rotate: '0deg' }], 
+    transform: [{ rotate: '0deg' }],
   },
   pipelineGrid: {
     width: '100%',
-    aspectRatio: 1, // Ensure the grid is square
+    aspectRatio: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     borderWidth: 2,
@@ -705,20 +668,26 @@ export const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   pipeTile: {
-    width: `${100 / 4}%`, // 4x4 grid
-    height: `${100 / 4}%`, 
+    width: '25%',
+    height: '25%',
     padding: 5,
     backgroundColor: '#F9FAFB',
     alignItems: 'center',
     justifyContent: 'center',
-    // Apply tile border to differentiate segments if needed
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    position: 'relative', // Add this for absolute positioning of children
   },
   pipeImage: {
-    width: '100%', // Match the tile size
-    height: '100%', // Match the tile size
-    resizeMode: 'contain', // Ensure the image fits inside the bounds
-},
+    width: '100%',
+    height: '100%',
+    // Add explicit dimensions for debugging
+    minWidth: 40,
+    minHeight: 40,
+  },
+  pipe: {
+    width: '100%',
+    height: '100%',
+  },
   // endregion
 });
