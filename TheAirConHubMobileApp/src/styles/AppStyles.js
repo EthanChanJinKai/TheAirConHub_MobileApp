@@ -559,7 +559,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 15,
   },
   gameCard: {
     backgroundColor: 'white',
@@ -690,4 +690,202 @@ export const styles = StyleSheet.create({
     height: '100%',
   },
   // endregion
+
+// region Leak Game
+leakGameReadyContainer: {
+  padding: 20,
+  alignItems: 'center',
+},
+leakGameIcon: {
+    marginBottom: 15,
+},
+leakGameHowTo: {
+    backgroundColor: '#374151',
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 20,
+    width: '100%',
+    alignSelf: 'flex-start',
+},
+leakGameHowToTitle: {
+    fontWeight: 'bold',
+    color: '#93C5FD',
+    marginBottom: 8,
+    fontSize: 16,
+},
+leakGameHowToText: {
+    color: '#D1D5DB',
+    fontSize: 14,
+    lineHeight: 20,
+},
+leakGameStartButton: {
+    backgroundColor: '#3B82F6',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+    width: '100%',
+},
+leakGameStartButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 18,
+    textAlign: 'center',
+},
+leakGameOverContainer: {
+    padding: 20,
+    alignItems: 'center',
+},
+leakGameFinalScore: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#3B82F6',
+    marginVertical: 15,
+},
+leakGameHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#1F2937',
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 10,
+},
+leakGameHeaderItem: {
+    alignItems: 'center',
+    flex: 1,
+},
+leakGameHeaderLabel: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    marginBottom: 2,
+},
+leakGameHeaderValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
+},
+leakGameSuccessMessage: {
+    backgroundColor: '#064E3B', // Dark Green
+    borderColor: '#059669',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+},
+leakGameWarningMessage: {
+    backgroundColor: '#78350F', // Dark Yellow/Orange
+    borderColor: '#F59E0B',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+},
+leakGameStatusTitle: {
+    fontWeight: 'bold',
+    color: 'white',
+    fontSize: 14,
+},
+leakGameStatusText: {
+    color: '#D1D5DB',
+    fontSize: 12,
+},
+leakGameSection: {
+    marginBottom: 10,
+},
+// --- SineWaveDisplay Styles ---
+sineWaveContainer: {
+    backgroundColor: '#1F2937',
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#374151',
+},
+sineWaveTargetBorder: {
+    borderColor: '#3B82F6', // Blue border for target
+    borderWidth: 2,
+},
+sineWaveLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 5,
+    color: '#D1D5DB',
+},
+sineWaveBackground: {
+    backgroundColor: '#111827',
+    borderRadius: 4,
+    padding: 5,
+    width: '100%',
+    overflow: 'hidden',
+},
+// --- Controls Styles ---
+leakGameControlsContainer: {
+    backgroundColor: '#1F2937',
+    borderRadius: 8,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#374151',
+},
+leakGameControlsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 20,
+    textAlign: 'center',
+},
+leakGameKnobRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 15,
+},
+// --- Knob/Slider Styles ---
+knobControl: {
+    alignItems: 'center',
+    width: '45%',
+    paddingHorizontal: 5,
+},
+knobLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#9CA3AF',
+    marginBottom: 10,
+    textAlign: 'center',
+},
+knobSliderContainer: {
+    width: '100%',
+    height: 30, // Adjust height as needed
+},
+knobSlider: {
+    width: '100%',
+    height: 30,
+},
+knobValue: {
+    marginTop: 10,
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+},
+knobRange: {
+    fontSize: 12,
+    color: '#6B7280',
+},
+leakGameLockButton: {
+    paddingVertical: 12,
+    borderRadius: 8,
+},
+leakGameLockButtonActive: {
+    backgroundColor: '#10B981', // Green for active
+},
+leakGameLockButtonInactive: {
+    backgroundColor: '#4B5563', // Gray for inactive
+},
+leakGameLockButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
+}
+// endregion
 });

@@ -9,6 +9,8 @@ import {
   ScrollView,
   Image,
   FlatList,
+  Dimensions,
+  Platform
 } from "react-native";
 import {
   Sparkles,
@@ -19,11 +21,58 @@ import {
   Wrench,
   Search,
   CloudOff,
+  RotateCw,
+  AlertCircle,
+  CheckCircle,
 } from "lucide-react-native";
+import Svg, { Path, Line, Circle } from "react-native-svg";
+import Slider from "@react-native-community/slider";
 import IPipe from "../../assets/ipipe.png";
 import CrossPipe from "../../assets/crosspipe.png";
 import LPipe from "../../assets/lpipe.png";
+import EntrancePipe from "../../assets/entrancepipe.png";
+import ExitPipe from "../../assets/exitpipe.png";
 import { styles } from "../styles/AppStyles";
+
+// region Responsive design helpers
+const { width, height } = Dimensions.get("window");
+const isDesktop = width >= 768;
+const isMobile = width < 768;
+
+const getResponsiveStyles = () => {
+  if (isDesktop) {
+    return {
+      // Desktop styles
+      waveWidth: 400,
+      waveHeight: 120,
+      headerPadding: 12,
+      headerFontSize: 20,
+      sectionMargin: 15,
+      controlsPadding: 20,
+      knobWidth: '40%',
+      buttonPaddingVertical: 15,
+      buttonFontSize: 18,
+      statusPadding: 12,
+      titleFontSize: 18,
+    };
+  } else {
+    return {
+      // Mobile styles
+      waveWidth: 300,
+      waveHeight: 100,
+      headerPadding: 8,
+      headerFontSize: 18,
+      sectionMargin: 10,
+      controlsPadding: 15,
+      knobWidth: '45%',
+      buttonPaddingVertical: 12,
+      buttonFontSize: 16,
+      statusPadding: 10,
+      titleFontSize: 16,
+    };
+  }
+};
+// endregion
 
 //region Tap Challenge
 const TapChallengeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
@@ -137,7 +186,7 @@ const END_INDEX = GRID_SIZE * GRID_SIZE - 1; // Bottom-Right corner
 
 // Helper to check if a specific connection is active on a tile based on its rotation
 const hasConnection = (tile, direction) => {
-  const rotation = tile.rotation;
+  const rotation = tile.rotation % 180;
   const typeIndex = tile.typeIndex;
 
   // I-Pipe (index 0)
@@ -181,23 +230,23 @@ const isPathConnected = (currentGrid) => {
   const queue = [START_INDEX];
   visited[START_INDEX] = true;
 
-  console.log('=== PATHFINDING DEBUG ===');
-  console.log('Starting pathfinding from index:', START_INDEX);
-  console.log('Target end index:', END_INDEX);
+  console.log("=== PATHFINDING DEBUG ===");
+  console.log("Starting pathfinding from index:", START_INDEX);
+  console.log("Target end index:", END_INDEX);
 
   while (queue.length > 0) {
     const currentIndex = queue.shift();
     const currentTile = currentGrid[currentIndex];
-    
+
     console.log(`Checking tile ${currentIndex}:`, {
       typeIndex: currentTile.typeIndex,
       rotation: currentTile.rotation,
       row: Math.floor(currentIndex / GRID_SIZE),
-      col: currentIndex % GRID_SIZE
+      col: currentIndex % GRID_SIZE,
     });
-    
+
     if (currentIndex === END_INDEX) {
-      console.log('✅ PATH FOUND! Reached the end!');
+      console.log("✅ PATH FOUND! Reached the end!");
       return true; // Path found!
     }
 
@@ -257,7 +306,7 @@ const isPathConnected = (currentGrid) => {
           currentConnects,
           neighborConnects,
           neighborType: neighborTile.typeIndex,
-          neighborRotation: neighborTile.rotation
+          neighborRotation: neighborTile.rotation,
         });
 
         if (currentConnects && neighborConnects) {
@@ -271,7 +320,7 @@ const isPathConnected = (currentGrid) => {
     }
   }
 
-  console.log('❌ NO PATH FOUND');
+  console.log("❌ NO PATH FOUND");
   return false; // No path found
 };
 
@@ -305,28 +354,28 @@ const createSolvableGrid = () => {
   while (current !== END_INDEX) {
     const row = Math.floor(current / GRID_SIZE);
     const col = current % GRID_SIZE;
-    
+
     const canGoRight = col < GRID_SIZE - 1;
     const canGoDown = row < GRID_SIZE - 1;
-    
+
     if (!canGoRight && !canGoDown) break; // Shouldn't happen
-    
+
     let nextMove;
     if (!canGoRight) {
-      nextMove = 'down';
+      nextMove = "down";
     } else if (!canGoDown) {
-      nextMove = 'right';
+      nextMove = "right";
     } else {
       // Randomly choose
-      nextMove = Math.random() < 0.5 ? 'right' : 'down';
+      nextMove = Math.random() < 0.5 ? "right" : "down";
     }
-    
-    if (nextMove === 'right') {
+
+    if (nextMove === "right") {
       current = current + 1;
     } else {
       current = current + GRID_SIZE;
     }
-    
+
     path.push(current);
   }
 
@@ -335,37 +384,40 @@ const createSolvableGrid = () => {
     const index = path[i];
     const row = Math.floor(index / GRID_SIZE);
     const col = index % GRID_SIZE;
-    
+
     const prevIndex = i > 0 ? path[i - 1] : null;
     const nextIndex = i < path.length - 1 ? path[i + 1] : null;
-    
+
     // Determine which directions we need to connect
-    let needsTop = false, needsBottom = false, needsLeft = false, needsRight = false;
-    
+    let needsTop = false,
+      needsBottom = false,
+      needsLeft = false,
+      needsRight = false;
+
     if (prevIndex !== null) {
       if (prevIndex === index - GRID_SIZE) needsTop = true;
       if (prevIndex === index + GRID_SIZE) needsBottom = true;
       if (prevIndex === index - 1) needsLeft = true;
       if (prevIndex === index + 1) needsRight = true;
     }
-    
+
     if (nextIndex !== null) {
       if (nextIndex === index - GRID_SIZE) needsTop = true;
       if (nextIndex === index + GRID_SIZE) needsBottom = true;
       if (nextIndex === index - 1) needsLeft = true;
       if (nextIndex === index + 1) needsRight = true;
     }
-    
+
     // Choose appropriate pipe type and rotation
     const connections = [needsTop, needsRight, needsBottom, needsLeft];
-    const connectionCount = connections.filter(c => c).length;
-    
+    const connectionCount = connections.filter((c) => c).length;
+
     if (connectionCount === 2) {
       // Check if straight or corner
       if ((needsTop && needsBottom) || (needsLeft && needsRight)) {
         // Straight pipe (I-Pipe)
         grid[index].typeIndex = 0;
-        grid[index].rotation = (needsTop && needsBottom) ? 0 : 90;
+        grid[index].rotation = needsTop && needsBottom ? 0 : 90;
       } else {
         // Corner pipe (L-Pipe)
         grid[index].typeIndex = 2;
@@ -383,7 +435,8 @@ const createSolvableGrid = () => {
       const typeIndex = Math.floor(Math.random() * PIPE_TYPES.length);
       const type = PIPE_TYPES[typeIndex];
       grid[i].typeIndex = typeIndex;
-      grid[i].rotation = type.rotations[Math.floor(Math.random() * type.rotations.length)];
+      grid[i].rotation =
+        type.rotations[Math.floor(Math.random() * type.rotations.length)];
     }
   }
 
@@ -392,14 +445,15 @@ const createSolvableGrid = () => {
     const index = path[i];
     // Skip START and END tiles - we'll set those separately
     if (index === START_INDEX || index === END_INDEX) continue;
-    
+
     const type = PIPE_TYPES[grid[index].typeIndex];
     const correctRotation = grid[index].rotation;
-    
+
     // Get other possible rotations (not the correct one)
-    const otherRotations = type.rotations.filter(r => r !== correctRotation);
+    const otherRotations = type.rotations.filter((r) => r !== correctRotation);
     if (otherRotations.length > 0) {
-      grid[index].rotation = otherRotations[Math.floor(Math.random() * otherRotations.length)];
+      grid[index].rotation =
+        otherRotations[Math.floor(Math.random() * otherRotations.length)];
     }
   }
 
@@ -487,7 +541,28 @@ const BrokenPipelineGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
         onPress={() => handleTilePress(index)}
         disabled={gameWon || isStart || isEnd}
       >
-        {pipeType.image ? (
+        {/* Special rendering for START tile */}
+        {isStart ? (
+          <>
+            <Image
+              source={EntrancePipe}
+              resizeMode="contain"
+              style={styles.pipeImage}
+            />
+            {/* <Text style={styles.pipeLabel}>💧</Text> */}
+          </>
+        ) : /* Special rendering for END tile */
+        isEnd ? (
+          <>
+            <Image
+              source={ExitPipe}
+              resizeMode="contain"
+              style={styles.pipeImage}
+            />
+            {/* <Text style={styles.pipeLabel}>🕳️</Text> */}
+          </>
+        ) : /* Normal pipe rendering */
+        pipeType.image ? (
           <Image
             source={pipeType.image}
             resizeMode="contain"
@@ -504,19 +579,13 @@ const BrokenPipelineGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
               styles.pipe,
               pipeType.style,
               {
-                borderColor: gameWon
-                  ? "#10B981"
-                  : isStart || isEnd
-                  ? "#1F2937"
-                  : "#3bb8f6ff",
-                opacity: isStart || isEnd ? 1 : 0.8,
+                borderColor: gameWon ? "#10B981" : "#3bb8f6ff",
+                opacity: 0.8,
                 transform: [{ rotate: `${tile.rotation}deg` }],
               },
             ]}
           />
         )}
-        {isStart && <Text style={styles.pipeLabel}>💧</Text>}
-        {isEnd && <Text style={styles.pipeLabel}>🕳️</Text>}
       </TouchableOpacity>
     );
   };
@@ -543,13 +612,28 @@ const BrokenPipelineGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
         </View>
       ) : (
         <View style={styles.pipelineGameArea}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: 15 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              width: "100%",
+              marginBottom: 15,
+            }}
+          >
             <Text style={styles.movesText}>Moves: {moves}</Text>
-            <TouchableOpacity 
-              style={{ backgroundColor: '#6B7280', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}
+            <TouchableOpacity
+              style={{
+                backgroundColor: "#6B7280",
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 8,
+              }}
               onPress={startNewGame}
             >
-              <Text style={{ color: 'white', fontWeight: '600', fontSize: 14 }}>New Game</Text>
+              <Text style={{ color: "white", fontWeight: "600", fontSize: 14 }}>
+                New Game
+              </Text>
             </TouchableOpacity>
           </View>
           <View style={styles.pipelineGrid}>
@@ -562,10 +646,447 @@ const BrokenPipelineGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 };
 // endregion
 
-// --- Placeholder Game Component 3: Find the Leak ---
-const FindTheLeakGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
-  // Placeholder logic for Find the Leak game
+//region Find the Leak
+const GasTypes = {
+  NATURAL_GAS: {
+    name: "Natural Gas",
+    color: "#3b82f6",
+    hazard: "High",
+    repair: "Pipe seal + ventilation",
+    frequency: 2.0,
+    amplitude: 3.0,
+  },
+  PROPANE: {
+    name: "Propane",
+    color: "#f59e0b",
+    hazard: "Critical",
+    repair: "Tank replacement + valve",
+    frequency: 3.5,
+    amplitude: 2.5,
+  },
+  CARBON_MONOXIDE: {
+    name: "Carbon Monoxide",
+    color: "#ef4444",
+    hazard: "Extreme",
+    repair: "Source isolation + alarm",
+    frequency: 1.5,
+    amplitude: 4.0,
+  },
+  METHANE: {
+    name: "Methane",
+    color: "#10b981",
+    hazard: "Moderate",
+    repair: "Leak patch + monitor",
+    frequency: 2.8,
+    amplitude: 3.5,
+  },
 };
+
+const SineWaveDisplay = ({ frequency, amplitude, color, label, isTarget }) => {
+  const responsiveStyles = getResponsiveStyles();
+  const points = 150;
+  const width = responsiveStyles.waveWidth;
+  const height = responsiveStyles.waveHeight;
+  const centerY = height / 2;
+
+  const pathData = Array.from({ length: points }, (_, i) => {
+    const x = (i / points) * Math.PI * 4;
+    const y = Math.sin(x * frequency) * (amplitude * 8);
+    const svgX = (i / points) * width;
+    const svgY = centerY - y;
+    return `${i === 0 ? "M" : "L"} ${svgX} ${svgY}`;
+  }).join(" ");
+
+  return (
+    <View
+      style={[
+        styles.sineWaveContainer,
+        isTarget && styles.sineWaveTargetBorder,
+      ]}
+    >
+      <Text style={styles.sineWaveLabel}>{label}</Text>
+      <View style={styles.sineWaveBackground}>
+        <Svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
+          {/* Grid lines */}
+          <Line
+            x1="0"
+            y1={centerY}
+            x2={width}
+            y2={centerY}
+            stroke="#374151"
+            strokeWidth="1"
+            strokeDasharray="5,5"
+          />
+          {[1, 2, 3].map((i) => (
+            <Line
+              key={i}
+              x1="0"
+              y1={centerY - i * 20}
+              x2={width}
+              y2={centerY - i * 20}
+              stroke="#1f2937"
+              strokeWidth="1"
+            />
+          ))}
+          {[1, 2, 3].map((i) => (
+            <Line
+              key={i}
+              x1="0"
+              y1={centerY + i * 20}
+              x2={width}
+              y2={centerY + i * 20}
+              stroke="#1f2937"
+              strokeWidth="1"
+            />
+          ))}
+          {/* Sine wave */}
+          <Path
+            d={pathData}
+            fill="none"
+            stroke={color}
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      </View>
+    </View>
+  );
+};
+
+const Knob = ({ label, value, min, max, step, onChange, unit }) => {
+  // Use a simplified visual component instead of the complex div-based web knob
+  return (
+    <View style={styles.knobControl}>
+      <Text style={styles.knobLabel}>{label}</Text>
+      <View style={styles.knobSliderContainer}>
+        <Slider
+          style={styles.knobSlider}
+          minimumValue={min}
+          maximumValue={max}
+          step={step}
+          value={value}
+          onValueChange={onChange}
+          minimumTrackTintColor="#3B82F6"
+          maximumTrackTintColor="#6B7280"
+          thumbTintColor="#3B82F6"
+        />
+      </View>
+      <Text style={styles.knobValue}>
+        {value.toFixed(1)}
+        {unit}
+      </Text>
+      <Text style={styles.knobRange}>
+        {min} - {max}
+        {unit}
+      </Text>
+    </View>
+  );
+};
+
+const FindTheLeakGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
+  const responsiveStyles = getResponsiveStyles();
+  const [gameState, setGameState] = useState("ready");
+  const [currentGas, setCurrentGas] = useState(null);
+  const [userFrequency, setUserFrequency] = useState(2.0);
+  const [userAmplitude, setUserAmplitude] = useState(3.0);
+  const [score, setScore] = useState(0);
+  const [round, setRound] = useState(1);
+  const [matchQuality, setMatchQuality] = useState(0);
+
+  const gasArray = Object.values(GasTypes);
+  const WINNING_SCORE = 100; // per round
+
+  const calculateMatch = useCallback(() => {
+    if (!currentGas) return 0;
+
+    const freqDiff = Math.abs(currentGas.frequency - userFrequency);
+    const ampDiff = Math.abs(currentGas.amplitude - userAmplitude);
+
+    // Tolerance thresholds
+    const freqTolerance = 0.2;
+    const ampTolerance = 0.3;
+
+    const freqMatch = Math.max(0, 100 - (freqDiff / freqTolerance) * 100);
+    const ampMatch = Math.max(0, 100 - (ampDiff / ampTolerance) * 100);
+
+    return Math.floor((freqMatch + ampMatch) / 2);
+  }, [currentGas, userFrequency, userAmplitude]);
+
+  useEffect(() => {
+    if (gameState === "playing") {
+      const quality = calculateMatch();
+      setMatchQuality(quality);
+    }
+  }, [userFrequency, userAmplitude, currentGas, gameState, calculateMatch]);
+
+  const startNewRound = () => {
+    const target = gasArray[Math.floor(Math.random() * gasArray.length)];
+
+    setCurrentGas(target);
+    setUserFrequency(2.5); // Reset to a neutral starting point
+    setUserAmplitude(3.5);
+    setGameState("playing");
+    setMatchQuality(0);
+  };
+
+  const handleLock = () => {
+    if (gameState !== "playing") return;
+
+    const quality = calculateMatch();
+
+    if (quality >= 90) {
+      setGameState("correct");
+      const roundScore = WINNING_SCORE + Math.max(0, quality - 90) * 5;
+      setScore((s) => s + roundScore);
+
+      if (!isPracticeMode) {
+        onEarnPoints(roundScore);
+      }
+
+      setTimeout(() => {
+        if (round < 3) {
+          // Reduced rounds for testing
+          setRound(round + 1);
+          startNewRound();
+        } else {
+          setGameState("gameover");
+        }
+      }, 1500);
+    } else {
+      setGameState("wrong");
+      setTimeout(() => setGameState("playing"), 1000);
+    }
+  };
+
+  const resetGame = () => {
+    setScore(0);
+    setRound(1);
+    setGameState("ready");
+  };
+
+  // --- RENDERING LOGIC ---
+
+  if (gameState === "ready") {
+    return (
+      <View style={styles.gameCard}>
+        <View style={styles.leakGameReadyContainer}>
+          <RotateCw size={50} color="#3B82F6" style={styles.leakGameIcon} />
+          <Text style={styles.gameTitle}>Odor Signature Match</Text>
+          <Text style={styles.gameSubtitle}>
+            Calibrate your detector by matching the target waveform using the
+            frequency and amplitude controls.
+          </Text>
+          <View style={styles.leakGameHowTo}>
+            <Text style={styles.leakGameHowToTitle}>How to Play:</Text>
+            <Text style={styles.leakGameHowToText}>
+              • Adjust frequency and amplitude controls.
+            </Text>
+            <Text style={styles.leakGameHowToText}>
+              • Match the target waveform exactly.
+            </Text>
+            <Text style={styles.leakGameHowToText}>
+              • Lock in when match quality ≥ 90%.
+            </Text>
+            <Text style={styles.leakGameHowToText}>
+              • Complete 3 rounds to finish.
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={startNewRound}
+            style={styles.leakGameStartButton}
+          >
+            <Text style={styles.leakGameStartButtonText}>
+              {isPracticeMode ? "Start Practice" : "Start Calibration"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  if (gameState === "gameover") {
+    return (
+      <View style={styles.gameCard}>
+        <View style={styles.leakGameOverContainer}>
+          <CheckCircle size={50} color="#10B981" style={styles.leakGameIcon} />
+          <Text style={styles.gameTitle}>Calibration Complete</Text>
+          <Text style={styles.leakGameFinalScore}>{score}</Text>
+          <Text style={styles.gameSubtitle}>Final Score</Text>
+          <TouchableOpacity
+            onPress={resetGame}
+            style={styles.leakGameStartButton}
+          >
+            <Text style={styles.leakGameStartButtonText}>New Session</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.backToHubButton, { marginTop: 10 }]}
+            onPress={onEndGame}
+          >
+            <Text style={styles.backToHubButtonText}>Back to Games</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // Active Game State
+  const matchColor =
+    matchQuality >= 90 ? "#10B981" : matchQuality >= 70 ? "#F59E0B" : "#EF4444";
+
+  return (
+    <View style={styles.gameCard}>
+      {/* Header with responsive padding */}
+      <View style={[
+        styles.leakGameHeader,
+        { padding: responsiveStyles.headerPadding }
+      ]}>
+        <View style={styles.leakGameHeaderItem}>
+          <Text style={styles.leakGameHeaderLabel}>Round</Text>
+          <Text style={[
+            styles.leakGameHeaderValue,
+            { fontSize: responsiveStyles.headerFontSize }
+          ]}>
+            {round}/{3}
+          </Text>
+        </View>
+        <View style={styles.leakGameHeaderItem}>
+          <Text style={styles.leakGameHeaderLabel}>Score</Text>
+          <Text style={[styles.leakGameHeaderValue, { color: "#3B82F6" }]}>
+            {score}
+          </Text>
+        </View>
+        <View style={styles.leakGameHeaderItem}>
+          <Text style={styles.leakGameHeaderLabel}>Match Quality</Text>
+          <Text style={[styles.leakGameHeaderValue, { color: matchColor }]}>
+            {matchQuality}%
+          </Text>
+        </View>
+      </View>
+
+      {/* Status Messages */}
+      {gameState === "correct" && (
+        <View style={[
+          styles.leakGameSuccessMessage,
+          { 
+            padding: responsiveStyles.statusPadding,
+            marginBottom: responsiveStyles.sectionMargin 
+          }
+          ]}>
+          <CheckCircle size={24} color="#A7F3D0" />
+          <View style={{ flex: 1, paddingLeft: 10 }}>
+            <Text style={styles.leakGameStatusTitle}>Perfect Match!</Text>
+            <Text style={styles.leakGameStatusText}>
+              {currentGas.name} identified - {currentGas.hazard} Hazard -
+              Repair: {currentGas.repair}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {gameState === "wrong" && (
+        <View style={styles.leakGameWarningMessage}>
+          <AlertCircle size={24} color="#FCD34D" />
+          <View style={{ flex: 1, paddingLeft: 10 }}>
+            <Text style={styles.leakGameStatusTitle}>
+              Match Quality Too Low
+            </Text>
+            <Text style={styles.leakGameStatusText}>
+              Need ≥90% match to lock in. Keep adjusting!
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {gameState === "playing" && (
+        <View style={{ height: 10 }} /> // Spacer
+      )}
+
+      {/* Target Waveform */}
+      {currentGas && (
+        <View style={styles.leakGameSection}>
+          <SineWaveDisplay
+            frequency={currentGas.frequency}
+            amplitude={currentGas.amplitude}
+            color={currentGas.color}
+            label={`TARGET: ${currentGas.name} Signature`}
+            isTarget={true}
+          />
+        </View>
+      )}
+
+      {/* User Waveform */}
+      <View style={styles.leakGameSection}>
+        <SineWaveDisplay
+          frequency={userFrequency}
+          amplitude={userAmplitude}
+          color="#9ca3af"
+          label="YOUR CALIBRATION"
+          isTarget={false}
+        />
+      </View>
+
+      {/* Controls */}
+      <View style={[
+        styles.leakGameControlsContainer,
+        { padding: responsiveStyles.controlsPadding }
+      ]}>
+        <Text style={[
+          styles.leakGameControlsTitle,
+          { fontSize: responsiveStyles.titleFontSize }
+        ]}>
+          Calibration Controls
+        </Text>
+        <View style={styles.leakGameKnobRow}>
+          <View style={{ width: responsiveStyles.knobWidth }}>
+            <Knob
+              label="FREQUENCY"
+              value={userFrequency}
+              min={1.0}
+              max={4.0}
+              step={0.1}
+              onChange={setUserFrequency}
+              unit=" Hz"
+            />
+          </View>
+          <View style={{ width: responsiveStyles.knobWidth }}>
+            <Knob
+              label="AMPLITUDE"
+              value={userAmplitude}
+              min={1.5}
+              max={5.0}
+              step={0.1}
+              onChange={setUserAmplitude}
+              unit=""
+            />
+          </View>
+        </View>
+        <TouchableOpacity
+          onPress={handleLock}
+          disabled={gameState !== "playing" || matchQuality < 90}
+          style={[
+            styles.leakGameLockButton,
+            { paddingVertical: responsiveStyles.buttonPaddingVertical },
+            matchQuality >= 90
+              ? styles.leakGameLockButtonActive
+              : styles.leakGameLockButtonInactive,
+          ]}
+        >
+          <Text style={[
+            styles.leakGameLockButtonText,
+            { fontSize: responsiveStyles.buttonFontSize }
+          ]}>
+            {matchQuality >= 90
+              ? "🔒 LOCK SIGNATURE"
+              : `MATCH ${matchQuality}% (Need ≥90%)`}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
+//endregion
 
 // --- Placeholder Game Component 4: Block the Haze ---
 const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
@@ -587,9 +1108,7 @@ const GameHubScreen = ({ games, onSelectGame, currentSlotKey }) => {
       style={styles.gameGridItem}
       onPress={() => onSelectGame(game.key)}
     >
-      <View style={styles.gameGridImagePlaceholder}>
-        {game.iconComponent}
-      </View>
+      <View style={styles.gameGridImagePlaceholder}>{game.iconComponent}</View>
       <Text style={styles.gameGridTitle}>{game.name}</Text>
       <Text style={styles.gameGridPoints}>
         {isPracticeMode ? "Practice" : game.bonus}
@@ -732,7 +1251,7 @@ const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={styles.gameContent}>
+        <ScrollView contentContainerStyle={styles.gameContent} showsVerticalScrollIndicator={true}>
           {renderActiveGame()}
         </ScrollView>
       </View>
