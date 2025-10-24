@@ -57,18 +57,18 @@ const getResponsiveStyles = () => {
     };
   } else {
     return {
-      // Mobile styles
-      waveWidth: 300,
-      waveHeight: 100,
-      headerPadding: 8,
-      headerFontSize: 18,
-      sectionMargin: 10,
-      controlsPadding: 15,
-      knobWidth: '45%',
-      buttonPaddingVertical: 12,
-      buttonFontSize: 16,
-      statusPadding: 10,
-      titleFontSize: 16,
+      // Mobile styles - more compact
+      waveWidth: 280,  // Reduced from 300
+      waveHeight: 80,  // Reduced from 100
+      headerPadding: 6,
+      headerFontSize: 16,
+      sectionMargin: 8,
+      controlsPadding: 12,
+      knobWidth: '48%',  // Increased from 45% to give more room
+      buttonPaddingVertical: 10,
+      buttonFontSize: 14,
+      statusPadding: 8,
+      titleFontSize: 14,
     };
   }
 };
