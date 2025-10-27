@@ -1,9 +1,11 @@
+// src/components/games/FindTheLeakGame.js
+
 import React, { useState, useEffect, useCallback } from "react";
 import { View, Text, TouchableOpacity, Dimensions } from "react-native";
 import { RotateCw, CheckCircle, AlertCircle } from "lucide-react-native";
 import { styles } from "../../styles/AppStyles";
 import SineWaveDisplay from "./shared/SineWaveDisplay";
-import Knob from "./shared/Knob";
+import RotatingKnob from "./shared/RotatingKnob";
 
 const { width } = Dimensions.get("window");
 const isDesktop = width >= 768;
@@ -15,7 +17,7 @@ const getResponsiveStyles = () => {
       headerFontSize: 20,
       sectionMargin: 15,
       controlsPadding: 20,
-      knobWidth: '40%',
+      knobWidth: '45%',
       buttonPaddingVertical: 15,
       buttonFontSize: 18,
       statusPadding: 12,
@@ -166,7 +168,7 @@ const FindTheLeakGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
           <View style={styles.leakGameHowTo}>
             <Text style={styles.leakGameHowToTitle}>How to Play:</Text>
             <Text style={styles.leakGameHowToText}>
-              • Adjust frequency and amplitude controls.
+              • Rotate the knobs to adjust frequency and amplitude.
             </Text>
             <Text style={styles.leakGameHowToText}>
               • Match the target waveform exactly.
@@ -312,7 +314,7 @@ const FindTheLeakGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
         />
       </View>
 
-      {/* Controls */}
+      {/* Rotating Knob Controls */}
       <View style={[
         styles.leakGameControlsContainer,
         { padding: responsiveStyles.controlsPadding }
@@ -325,7 +327,7 @@ const FindTheLeakGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
         </Text>
         <View style={styles.leakGameKnobRow}>
           <View style={{ width: responsiveStyles.knobWidth }}>
-            <Knob
+            <RotatingKnob
               label="FREQUENCY"
               value={userFrequency}
               min={1.0}
@@ -336,7 +338,7 @@ const FindTheLeakGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
             />
           </View>
           <View style={{ width: responsiveStyles.knobWidth }}>
-            <Knob
+            <RotatingKnob
               label="AMPLITUDE"
               value={userAmplitude}
               min={1.5}
