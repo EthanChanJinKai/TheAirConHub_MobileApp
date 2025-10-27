@@ -51,7 +51,7 @@ const describeArc = (x, y, radius, startAngle, endAngle) => {
   const end = getCoordinatesForAngle(endAngle, radius);
   const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
   // Prevents arc issues if start/end are identical after modulo operations
-  const endAngleAdjusted = endAngle === startAngle ? endAngle - 0.001 : endAngle;
+  const endAngleAdjusted = Math.abs((endAngle - startAngle) % 360) < 0.001 ? endAngle - 0.001 : endAngle;
   const endAdjusted = getCoordinatesForAngle(endAngleAdjusted, radius);
 
   const d = [
@@ -126,15 +126,16 @@ const WheelOfFortuneGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     outputRange: ["0deg", "360deg"],
   });
 
-  // --- Ensure ALL text outside SVG uses RN <Text> ---
+  // --- Store text in variables for clarity and safety ---
   const spinButtonText = gameState === 'spinning' ? "Spinning..." : "Spin the Wheel!";
   const spinAgainButtonText = "Spin Again";
   const backToGamesButtonText = "Back to Games";
+  // Construct result text carefully, ensuring numbers are interpolated correctly
   const resultLandedText = "You landed on: ";
-  const resultPointsText = `${spinResultValue} points!`;
+  const resultPointsText = spinResultValue !== null ? `${spinResultValue} points!` : ''; // Handle null case
   const practiceCompleteText = "Practice spin complete.";
   const noPointsText = "No points this time.";
-  const pointsAddedText = `+${spinResultValue} points added!`;
+  const pointsAddedText = spinResultValue !== null && spinResultValue > 0 ? `+${spinResultValue} points added!` : ''; // Handle null/zero
   // ---
 
   return (
@@ -184,7 +185,6 @@ const WheelOfFortuneGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
                     const segmentValueString = String(segment.value);
 
                     return (
-                      // Note: No <G> wrapping Path/Text needed if rotation applied directly to Text
                       <React.Fragment key={segment.key || index}>
                          <Path
                              d={pathData}
@@ -205,7 +205,7 @@ const WheelOfFortuneGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
                           >
                            {segmentValueString}
                          </SvgText>
-                      </React.Fragment> // Use Fragment instead of G if G isn't needed for grouping transforms
+                      </React.Fragment>
                     );
                   })}
                  </G>
@@ -231,13 +231,14 @@ const WheelOfFortuneGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
             <Text style={appStyles.startButtonText}>{spinButtonText}</Text>
           </TouchableOpacity>
         )}
-        {gameState === "finished" && (
+        {gameState === "finished" && spinResultValue !== null && ( // Ensure result value exists before rendering
           <View style={localStyles.resultContainer}>
              <CheckCircle size={30} color="#10b981" />
             <Text style={localStyles.resultText}>
               {resultLandedText}
               <Text style={{ fontWeight: "bold" }}>{resultPointsText}</Text>
             </Text>
+            {/* Conditional messages */}
             {!isPracticeMode && spinResultValue > 0 && (
                  <Text style={[appStyles.successText, {marginBottom: 10}]}>{pointsAddedText}</Text>
             )}
@@ -275,15 +276,15 @@ const localStyles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         marginVertical: 25,
-        height: wheelDiameter + pointerSize, // Make space for pointer top margin
+        height: wheelDiameter + pointerSize,
         position: 'relative',
         marginBottom: 20,
       },
        pointerContainer: {
         position: 'absolute',
-        top: -pointerSize * 0.4, // Position pointer slightly above the wheel
+        top: -pointerSize * 0.4,
         left: '50%',
-        marginLeft: -pointerSize / 2, // Center the pointer base horizontally
+        marginLeft: -pointerSize / 2,
         zIndex: 10,
         width: pointerSize,
         height: pointerSize * 1.5,
@@ -299,8 +300,8 @@ const localStyles = StyleSheet.create({
         borderBottomWidth: pointerSize * 0.9,
         borderLeftColor: "transparent",
         borderRightColor: "transparent",
-        borderBottomColor: "#374151", // Pointer color
-        transform: [{ rotate: "180deg" }], // Point it downwards
+        borderBottomColor: "#374151",
+        transform: [{ rotate: "180deg" }],
       },
       controlsContainer: {
         marginTop: 15,
