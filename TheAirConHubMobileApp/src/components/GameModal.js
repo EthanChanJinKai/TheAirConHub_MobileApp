@@ -50,23 +50,41 @@ const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
   ];
 
   useEffect(() => {
+    // Reset active game when modal becomes visible or initial key changes
     if (visible) {
-      setActiveGameKey(null);
-      setCurrentSlotKey(initialGameKey);
+      setActiveGameKey(null); // Always start at the hub
+      setCurrentSlotKey(initialGameKey); // Set the current slot context
     } else {
+      // Reset when modal closes
+      setActiveGameKey(null);
       setCurrentSlotKey(null);
     }
   }, [visible, initialGameKey]);
 
-  const renderActiveGame = () => {
-    const handleEndGame = () => setActiveGameKey(null);
+
+  const handleEndGame = () => {
+     // Go back to the hub after a game ends
+    setActiveGameKey(null);
+  }
+
+  const handleSelectGame = (gameKey) => {
+    // Set the selected game as active
+    setActiveGameKey(gameKey);
+  }
+
+  const handleEarnPointsInGame = (points) => {
+    // Pass earned points up, including the slot key context
+    onEarnPoints(points, currentSlotKey);
+  }
+
+  const renderActiveGameComponent = () => {
     const isPracticeMode = currentSlotKey === "practice";
 
     switch (activeGameKey) {
       case "tap":
         return (
           <TapChallengeGame
-            onEarnPoints={(points) => onEarnPoints(points, currentSlotKey)}
+            onEarnPoints={handleEarnPointsInGame}
             onEndGame={handleEndGame}
             isPracticeMode={isPracticeMode}
           />
@@ -74,7 +92,7 @@ const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
       case "sequence":
         return (
           <BrokenPipelineGame
-            onEarnPoints={(points) => onEarnPoints(points, currentSlotKey)}
+            onEarnPoints={handleEarnPointsInGame}
             onEndGame={handleEndGame}
             isPracticeMode={isPracticeMode}
           />
@@ -82,7 +100,7 @@ const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
       case "leak":
         return (
           <FindTheLeakGame
-            onEarnPoints={(points) => onEarnPoints(points, currentSlotKey)}
+            onEarnPoints={handleEarnPointsInGame}
             onEndGame={handleEndGame}
             isPracticeMode={isPracticeMode}
           />
@@ -90,7 +108,7 @@ const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
       case "block":
         return (
           <BlockTheHazeGame
-            onEarnPoints={(points) => onEarnPoints(points, currentSlotKey)}
+            onEarnPoints={handleEarnPointsInGame}
             onEndGame={handleEndGame}
             isPracticeMode={isPracticeMode}
           />
@@ -98,37 +116,56 @@ const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
       case "wheel":
         return (
           <WheelOfFortuneGame
-            onEarnPoints={(points) => onEarnPoints(points, currentSlotKey)}
+            onEarnPoints={handleEarnPointsInGame}
             onEndGame={handleEndGame}
             isPracticeMode={isPracticeMode}
           />
         );
-      default:
+      default: // null activeGameKey means show the Hub
         return (
           <GameHubScreen
             games={minigames}
-            onSelectGame={setActiveGameKey}
+            onSelectGame={handleSelectGame} // Use the new handler
             currentSlotKey={currentSlotKey}
           />
         );
     }
   };
 
+  // Determine if the currently rendered component needs the ScrollView wrapper.
+  // GameHubScreen uses FlatList, so it doesn't need the ScrollView.
+  // Assume individual game components might need it if their content overflows.
+  const needsScrollView = activeGameKey !== null; 
+
   return (
-    <Modal visible={visible} animationType="slide" transparent={false}>
+    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
       <View style={styles.gameModalContainer}>
         <View style={styles.gameHeader}>
+          {/* Back button logic: If in a game, go back to Hub, otherwise close Modal */}
           <TouchableOpacity
-            onPress={activeGameKey ? () => setActiveGameKey(null) : onClose}
+            onPress={activeGameKey ? handleEndGame : onClose} 
             style={styles.closeButton}
           >
             <X size={28} color="white" />
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={styles.gameContent} showsVerticalScrollIndicator={true}>
-          {renderActiveGame()}
-        </ScrollView>
+        {/* --- Conditional ScrollView --- */}
+        {needsScrollView ? (
+          <ScrollView 
+            contentContainerStyle={styles.gameContent} 
+            showsVerticalScrollIndicator={true}
+            keyboardShouldPersistTaps="handled" // Good practice for ScrollViews with inputs
+          >
+            {renderActiveGameComponent()}
+          </ScrollView>
+        ) : (
+          // If no ScrollView is needed (i.e., GameHubScreen), render directly.
+          // Apply similar styling/flex properties as ScrollView's content container if needed.
+           <View style={styles.gameContent}> 
+             {renderActiveGameComponent()}
+           </View>
+        )}
       </View>
     </Modal>
   );
