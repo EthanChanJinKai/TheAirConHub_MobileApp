@@ -33,6 +33,7 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
   const DROP_SIZE_PERCENT = 8; // Drop size as percentage width
   const SAFE_ZONE_MARGIN = 10; // Margin from edges where drops won't spawn
 
+  // ... (useEffect hooks and game logic functions remain the same) ...
   // Update ref whenever blockerPosition changes
   useEffect(() => {
     blockerPositionRef.current = blockerPosition;
@@ -234,9 +235,11 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     onEndGame();
   };
 
+
   // --- RENDER LOGIC ---
 
-  // Ready Screen
+  // ... (Ready and Game Over screens remain the same) ...
+    // Ready Screen
   if (gameState === "ready") {
     return (
       <View style={appStyles.gameCard}>
@@ -284,7 +287,7 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={[appStyles.backToHubButton, { marginTop: 10 }]} // Using shared style
-            onPress={finishGame}
+            onPress={finishGame} // Use finishGame to award points and exit
           >
             <Text style={appStyles.backToHubButtonText}>Back to Games</Text>
           </TouchableOpacity>
@@ -292,6 +295,7 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
       </View>
     );
   }
+
 
   // Active Game Screen (gameState === 'playing')
   return (
@@ -343,7 +347,7 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
                   ? "#EF4444" // Red
                   : "#78716C", // Default color
                 width: `${DROP_SIZE_PERCENT}%`,
-                // borderRadius: 50, // Moved to localStyles
+                // Note: borderRadius is now defined in localStyles.hazeDrop
               },
             ]}
           >
@@ -411,7 +415,9 @@ const localStyles = StyleSheet.create({
     position: "absolute",
     // width is percentage based, defined inline
     aspectRatio: 1, // Make it square based on width
-    borderRadius: 50, // Large value ensures circle shape
+    // --- FIX: Use a large fixed value for borderRadius ---
+    borderRadius: 50, // Large value ensures circle shape regardless of size
+    // --- END FIX ---
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
