@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
   winText: {
     position: 'absolute',
     top: '45%',
-    fontSize: 48,
+    fontSize: 48,   
     fontWeight: 'bold',
     color: '#28a745',
     textShadowColor: 'rgba(0, 0, 0, 0.2)',
