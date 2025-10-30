@@ -1,38 +1,43 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-// This is the correct import for your Expo project
-import { StyleSheet, View, TouchableOpacity, Dimensions, Text, Alert, ScrollView } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  TouchableOpacity,
+  Dimensions,
+  Text,
+  ScrollView,
+  Modal,
+  Pressable,
+  Image // Import Image
+} from 'react-native';
 
-// This is the correct import for your Expo project
 import * as Haptics from 'expo-haptics';
 
-// PREVIEW FIX: Mock Haptics object removed.
-
-
-
-
+// --- Import your pipe images ---
+// (Please double-check this path!)
+const images = {
+  START: require('../../../assets/pipelines/entrancepipe_1.png'),
+  END: require('../../../assets/pipelines/exitpipe_1.png'),
+  STRAIGHT: require('../../../assets/pipelines/ipipe_1.png'),
+  L_BEND: require('../../../assets/pipelines/lpipe_1.png'),
+  T_BEND: require('../../../assets/pipelines/tpipe_1.png'),
+  CROSS: require('../../../assets/pipelines/crosspipe_1.png'),
+};
+// --- END NEW ---
 
 // --- Config ---
 
-// NEW: Stage configuration
 const STAGE_CONFIG = {
-  1: { rows: 4, cols: 4, start: { r: 0, c: 0 }, end: { r: 3, c: 3 } },
-  2: { rows: 5, cols: 5, start: { r: 0, c: 0 }, end: { r: 4, c: 4 } },
-  3: { rows: 6, cols: 6, start: { r: 0, c: 0 }, end: { r: 5, c: 5 } },
+  1: { rows: 4, cols: 4, start: { r: 0, c: 0 }, end: { r: 3, c: 3 }, minPathLength: 7 },
+  2: { rows: 5, cols: 5, start: { r: 0, c: 0 }, end: { r: 4, c: 4 }, minPathLength: 12 },
+  3: { rows: 6, cols: 6, start: { r: 0, c: 0 }, end: { r: 5, c: 5 }, minPathLength: 20 },
 };
 
-// Get screen dimensions
 const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
-// Calculate a constant game area size
 const gameAreaSize = Math.min(windowWidth * 0.9, windowHeight * 0.7);
 
 // --- Game Logic ---
 
-// --- NEW LEVEL GENERATOR ---
-
-/**
- * Helper to get the direction from one cell to an adjacent one.
- * e.g., from {r:0,c:0} to {r:0,c:1} is 'RIGHT'
- */
 const getDir = (from, to) => {
   if (to.r < from.r) return 'TOP';
   if (to.r > from.r) return 'BOTTOM';
@@ -41,12 +46,8 @@ const getDir = (from, to) => {
   return null;
 };
 
-/**
- * Helper to get the pipe type and rotation from its required openings.
- * e.g., ['TOP', 'BOTTOM'] => { type: 'STRAIGHT', rotation: 0 }
- */
 const getPipeFromOpenings = (openings) => {
-  const [o1, o2] = openings.sort(); // Sort to simplify checks
+  const [o1, o2] = openings.sort();
 
   if (o1 === 'BOTTOM' && o2 === 'TOP') return { type: 'STRAIGHT', rotation: 0 };
   if (o1 === 'LEFT' && o2 === 'RIGHT') return { type: 'STRAIGHT', rotation: 1 };
@@ -56,15 +57,11 @@ const getPipeFromOpenings = (openings) => {
   if (o1 === 'BOTTOM' && o2 === 'LEFT') return { type: 'L_BEND', rotation: 2 };
   if (o1 === 'LEFT' && o2 === 'TOP') return { type: 'L_BEND', rotation: 3 };
 
-  // Should not happen in a valid path
   return { type: 'STRAIGHT', rotation: 0 };
 };
 
-/**
- * Gets the rotation for a START or END piece.
- * 0:T, 1:R, 2:B, 3:L
- */
 const getTerminalRotation = (dir) => {
+  // Assumes base 'UP' for START/END
   if (dir === 'TOP') return 0;
   if (dir === 'RIGHT') return 1;
   if (dir === 'BOTTOM') return 2;
@@ -72,9 +69,6 @@ const getTerminalRotation = (dir) => {
   return 0;
 };
 
-/**
- * Shuffles an array in place.
- */
 const shuffleArray = (array) => {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -82,20 +76,36 @@ const shuffleArray = (array) => {
   }
 };
 
-/**
- * Creates a new randomized, solvable level FOR A GIVEN STAGE.
- */
 const createInitialLevel = (stage) => {
-  const { rows, cols, start, end } = STAGE_CONFIG[stage];
+  const { rows, cols, start, end, minPathLength } = STAGE_CONFIG[stage];
 
   // 1. Fill grid with random junk pipes first
-  const grid = Array(rows).fill(null).map(() => 
-    Array(cols).fill(null).map(() => ({
-      type: Math.random() > 0.5 ? 'STRAIGHT' : 'L_BEND',
-      rotation: Math.floor(Math.random() * 4),
-      isConnected: false,
-      isFixed: false,
-    }))
+  const grid = Array(rows).fill(null).map(() =>
+    Array(cols).fill(null).map(() => {
+      const rand = Math.random();
+      let type;
+      // 96% chance for normal pipes (48% each)
+      if (rand < 0.48) {
+        type = 'STRAIGHT';
+      } else if (rand < 0.96) {
+        type = 'L_BEND';
+      }
+      // 3% chance for T_BEND
+      else if (rand < 0.99) {
+        type = 'T_BEND';
+      }
+      // 1% chance for CROSS
+      else {
+        type = 'CROSS';
+      }
+
+      return {
+        type: type,
+        rotation: Math.floor(Math.random() * 4),
+        isConnected: false,
+        isFixed: false,
+      };
+    })
   );
 
   // 2. Find a solvable path using Randomized DFS
@@ -112,7 +122,7 @@ const createInitialLevel = (stage) => {
     visited.add(posKey);
 
     if (r === end.r && c === end.c) {
-      return true; // Reached the end
+      return true;
     }
 
     const neighbors = [
@@ -121,19 +131,29 @@ const createInitialLevel = (stage) => {
       { r: r, c: c - 1 },
       { r: r, c: c + 1 }
     ];
-    shuffleArray(neighbors); // Randomize direction
+    shuffleArray(neighbors);
 
     for (const n of neighbors) {
       if (dfs(n.r, n.c)) {
-        return true; // Path found
+        return true;
       }
     }
 
-    path.pop(); // Backtrack
+    path.pop();
     return false;
   };
 
-  dfs(start.r, start.c); // Find the path
+  let pathFound = false;
+  while (!pathFound) {
+    path.length = 0;
+    visited.clear();
+
+    const success = dfs(start.r, start.c);
+
+    if (success && path.length >= minPathLength) {
+      pathFound = true;
+    }
+  }
 
   // 3. Place the solution pipes along the path
   const solutionRotations = {};
@@ -155,30 +175,73 @@ const createInitialLevel = (stage) => {
       // MIDDLE Pipe
       const dir1 = getDir(pos, path[i - 1]);
       const dir2 = getDir(pos, path[i + 1]);
-      const { type, rotation } = getPipeFromOpenings([dir1, dir2]);
-      grid[pos.r][pos.c] = { type, rotation, isFixed: false, isConnected: false };
-      solutionRotations[posKey] = rotation;
+      
+      const { type: baseType, rotation: baseRotation } = getPipeFromOpenings([dir1, dir2]);
+      
+      let finalType = baseType;
+      let finalRotation = baseRotation;
+
+      let upgradeChance = 0;
+      if (stage === 2) upgradeChance = 0.1; // 10% chance in Stage 2
+      if (stage === 3) upgradeChance = 0.2; // 20% chance in Stage 3
+
+      if (Math.random() < upgradeChance) {
+        const randType = Math.random();
+        
+        if (randType < 0.7) { 
+          finalType = 'T_BEND';
+          if (baseType === 'STRAIGHT') {
+            finalRotation = (baseRotation === 0) ? (Math.random() < 0.5 ? 0 : 2) : (Math.random() < 0.5 ? 1 : 3);
+          } else {
+            if (baseRotation === 0) finalRotation = Math.random() < 0.5 ? 0 : 3;
+            else if (baseRotation === 1) finalRotation = Math.random() < 0.5 ? 0 : 1;
+            else if (baseRotation === 2) finalRotation = Math.random() < 0.5 ? 1 : 2;
+            else if (baseRotation === 3) finalRotation = Math.random() < 0.5 ? 2 : 3;
+          }
+        } 
+        else {
+          finalType = 'CROSS';
+          finalRotation = 0;
+        }
+      }
+      
+      grid[pos.r][pos.c] = { type: finalType, rotation: finalRotation, isFixed: false, isConnected: false };
+      solutionRotations[posKey] = finalRotation;
     }
   }
 
-  // 4. Randomize rotations of non-fixed pipes, ensuring it's not the solution
+  // 4. Randomize rotations of non-fixed pipes
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       if (grid[r][c].isFixed) continue;
 
       const posKey = `${r},${c}`;
-      const solutionRotation = solutionRotations[posKey]; // This pipe might be junk or on the path
+      const solutionRotation = solutionRotations[posKey];
 
       if (solutionRotation !== undefined) {
-        // This is a path piece, scramble it
         let newRotation = Math.floor(Math.random() * 4);
         while (newRotation === solutionRotation) {
           newRotation = Math.floor(Math.random() * 4);
         }
         grid[r][c].rotation = newRotation;
       } else {
-        // This is a junk piece, just set a random rotation
         grid[r][c].rotation = Math.floor(Math.random() * 4);
+      }
+    }
+  }
+  
+  // 5. Add fixed obstacles for Stage 3
+  if (stage === 3) {
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const posKey = `${r},${c}`;
+        if (grid[r][c].type === 'START' || grid[r][c].type === 'END' || solutionRotations.hasOwnProperty(posKey)) {
+          continue;
+        }
+        
+        if (Math.random() < 0.25) {
+          grid[r][c].isFixed = true;
+        }
       }
     }
   }
@@ -186,46 +249,56 @@ const createInitialLevel = (stage) => {
   return grid;
 };
 
-/**
- * Returns an array of open directions for a given pipe piece.
- * e.g., ['TOP', 'BOTTOM']
- */
+// --- Updated getOpenings with all your rotations ---
 const getOpenings = (piece) => {
   if (!piece) return [];
-  
+
   const { type, rotation } = piece;
 
   switch (type) {
+    // We assume the default (rotation 0) View for START/END points UP.
     case 'START':
-      // 0:T, 1:R, 2:B, 3:L
-      if (rotation === 0) return ['TOP'];
-      if (rotation === 1) return ['RIGHT'];
-      if (rotation === 2) return ['BOTTOM'];
-      if (rotation === 3) return ['LEFT'];
+      if (rotation === 0) return ['TOP'];    // 0deg
+      if (rotation === 1) return ['RIGHT'];  // 90deg
+      if (rotation === 2) return ['BOTTOM']; // 180deg
+      if (rotation === 3) return ['LEFT'];   // 270deg
       return [];
-      
+
     case 'END':
-      // 0:T, 1:R, 2:B, 3:L
-      if (rotation === 0) return ['TOP'];
-      if (rotation === 1) return ['RIGHT'];
-      if (rotation === 2) return ['BOTTOM'];
-      if (rotation === 3) return ['LEFT'];
+      if (rotation === 0) return ['TOP'];    // 0deg
+      if (rotation === 1) return ['RIGHT'];  // 90deg
+      if (rotation === 2) return ['BOTTOM']; // 180deg
+      if (rotation === 3) return ['LEFT'];   // 270deg
       return [];
 
     case 'STRAIGHT':
-      return rotation % 2 === 0 ? ['TOP', 'BOTTOM'] : ['LEFT', 'RIGHT'];
+      // Assumes rotation 0 is horizontal
+      return rotation % 2 === 0 ? ['LEFT', 'RIGHT'] : ['TOP', 'BOTTOM'];
 
     case 'L_BEND':
-      if (rotation === 0) return ['TOP', 'RIGHT'];
-      if (rotation === 1) return ['RIGHT', 'BOTTOM'];
-      if (rotation === 2) return ['BOTTOM', 'LEFT'];
-      if (rotation === 3) return ['LEFT', 'TOP'];
+      // Assumes the base image (rotation 0) is ['RIGHT', 'BOTTOM']
+      if (rotation === 0) return ['RIGHT', 'BOTTOM'];
+      if (rotation === 1) return ['BOTTOM', 'LEFT'];
+      if (rotation === 2) return ['LEFT', 'TOP'];
+      if (rotation === 3) return ['TOP', 'RIGHT'];
       return [];
+
+    case 'T_BEND':
+      // Assumes the base image (rotation 0) is ['RIGHT', 'BOTTOM', 'LEFT']
+      if (rotation === 0) return ['RIGHT', 'BOTTOM', 'LEFT'];
+      if (rotation === 1) return ['BOTTOM', 'LEFT', 'TOP'];
+      if (rotation === 2) return ['LEFT', 'TOP', 'RIGHT'];
+      if (rotation === 3) return ['TOP', 'RIGHT', 'BOTTOM'];
+      return [];
+
+    case 'CROSS':
+      return ['TOP', 'BOTTOM', 'LEFT', 'RIGHT'];
 
     default:
       return [];
   }
 };
+// --- END NEW ---
 
 const getOppositeDir = (dir) => {
   if (dir === 'TOP') return 'BOTTOM';
@@ -234,44 +307,110 @@ const getOppositeDir = (dir) => {
   if (dir === 'RIGHT') return 'LEFT';
 };
 
-// --- Component ---
+
+// --- CUSTOM ALERT COMPONENT (Unchanged) ---
+
+const CustomAlert = ({ visible, title, message, buttons }) => {
+  if (!visible) return null;
+
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={() => {
+        const RNE_alert_button_action = buttons.find(b => b.style === 'cancel') || buttons[0];
+        if (RNE_alert_button_action && RNE_alert_button_action.onPress) {
+          RNE_alert_button_action.onPress();
+        }
+      }}
+    >
+      <Pressable style={styles.alertBackdrop}>
+        <View style={styles.alertContainer}>
+          <Text style={styles.alertTitle}>{title}</Text>
+          <Text style={styles.alertMessage}>{message}</Text>
+          <View style={styles.alertButtonRow}>
+            {buttons.map((button, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.alertButton,
+                  button.style === 'cancel' ? styles.alertButtonCancel : styles.alertButtonPrimary,
+                  buttons.length > 1 && { flex: 1 }
+                ]}
+                onPress={button.onPress}
+              >
+                <Text style={[
+                  styles.alertButtonText,
+                  button.style === 'cancel' ? styles.alertButtonTextCancel : styles.alertButtonTextPrimary
+                ]}>
+                  {button.text}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Pressable>
+    </Modal>
+  );
+};
+
+// --- Main Game Component ---
 
 export default function BrokenPipelineGame() {
   const [currentStage, setCurrentStage] = useState(1);
   const [grid, setGrid] = useState(() => createInitialLevel(currentStage));
-  const [stageWon, setStageWon] = useState(false); // Flag for when *current* stage is won
-  const [gameFinished, setGameFinished] = useState(false); // Flag for winning stage 3
+  const [stageWon, setStageWon] = useState(false);
+  const [gameFinished, setGameFinished] = useState(false);
 
-  // --- DYNAMIC CONFIG ---
-  // Recalculate config and sizes based on the current stage
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ title: '', message: '', buttons: [] });
+
   const { rows, cols, start, end } = STAGE_CONFIG[currentStage];
 
+  // --- Cleaned up dynamicSize hook ---
   const dynamicSize = useMemo(() => {
     const cellSize = Math.floor(gameAreaSize / cols);
     const pipeWidth = Math.floor(cellSize * 0.2);
     const pipeCenterSize = pipeWidth;
-    const pipeStubLength = Math.floor((cellSize - pipeWidth) / 2);
+
+    const pipeStubLengthAndOffset = Math.floor((cellSize - pipeWidth) / 2);
 
     return {
       cell: { width: cellSize, height: cellSize },
       pipeCenter: { width: pipeCenterSize, height: pipeCenterSize },
-      pipeStubTop: { width: pipeWidth, height: pipeStubLength, top: 0 },
-      pipeStubBottom: { width: pipeWidth, height: pipeStubLength, bottom: 0 },
-      pipeStubLeft: { width: pipeStubLength, height: pipeWidth, left: 0 },
-      pipeStubRight: { width: pipeStubLength, height: pipeWidth, right: 0 },
-      startNode: { width: cellSize * 0.5, height: cellSize * 0.5, borderRadius: cellSize * 0.25 },
-      endNode: { width: cellSize * 0.5, height: cellSize * 0.5, borderRadius: cellSize * 0.25 },
+      pipeStubTop: {
+        width: pipeWidth,
+        height: pipeStubLengthAndOffset,
+        top: 0,
+        left: pipeStubLengthAndOffset
+      },
+      pipeStubBottom: {
+        width: pipeWidth,
+        height: pipeStubLengthAndOffset,
+        bottom: 0,
+        left: pipeStubLengthAndOffset
+      },
+      pipeStubLeft: {
+        width: pipeStubLengthAndOffset,
+        height: pipeWidth,
+        left: 0,
+        top: pipeStubLengthAndOffset
+      },
+      pipeStubRight: {
+        width: pipeStubLengthAndOffset,
+        height: pipeWidth,
+        right: 0,
+        top: pipeStubLengthAndOffset
+      },
     };
   }, [cols, gameAreaSize]);
-  // --- END DYNAMIC CONFIG ---
+  // --- END CLEANUP ---
 
-  /**
-   * Advance to the next stage.
-   */
   const advanceToNextStage = useCallback(() => {
     const nextStage = currentStage + 1;
     if (nextStage > 3) {
-      setGameFinished(true); // Won the final stage
+      setGameFinished(true);
       return;
     }
     setCurrentStage(nextStage);
@@ -279,9 +418,6 @@ export default function BrokenPipelineGame() {
     setStageWon(false);
   }, [currentStage]);
 
-  /**
-   * Reset the game back to Stage 1.
-   */
   const resetGame = useCallback(() => {
     setCurrentStage(1);
     setGrid(createInitialLevel(1));
@@ -289,18 +425,14 @@ export default function BrokenPipelineGame() {
     setGameFinished(false);
   }, []);
 
-  /**
-   * Handle user tap on a pipe.
-   */
   const handlePress = (r, c) => {
     if (stageWon || gameFinished || grid[r][c].isFixed) {
-      return; // Don't rotate fixed pieces or if game is won
+      return;
     }
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    // Create a new grid state
-    const newGrid = grid.map((row, rowIndex) => 
+    const newGrid = grid.map((row, rowIndex) =>
       row.map((cell, colIndex) => {
         if (r === rowIndex && c === colIndex) {
           return {
@@ -314,20 +446,21 @@ export default function BrokenPipelineGame() {
     setGrid(newGrid);
   };
 
-  // This useEffect triggers the connection check *after* the state has updated
+  // --- useEffect hook is unchanged ---
   useEffect(() => {
-    if (stageWon || gameFinished) return; // Don't check if stage is already won
+    if (stageWon || gameFinished) return;
+
+    const { rows: currentRows, cols: currentCol, start: currentStart } = STAGE_CONFIG[currentStage];
 
     const checkConnections = (currentGrid) => {
-      // 1. Create a new grid and reset all 'isConnected'
-      const newGrid = currentGrid.map(row => 
+      const newGrid = currentGrid.map(row =>
         row.map(cell => ({ ...cell, isConnected: false }))
       );
 
       let win = false;
-      const q = [start]; // Use dynamic start
-      const visited = new Set([`${start.r},${start.c}`]);
-      newGrid[start.r][start.c].isConnected = true;
+      const q = [currentStart];
+      const visited = new Set([`${currentStart.r},${currentStart.c}`]);
+      newGrid[currentStart.r][currentStart.c].isConnected = true;
 
       while (q.length > 0) {
         const pos = q.shift();
@@ -345,27 +478,22 @@ export default function BrokenPipelineGame() {
 
           const neighborPosKey = `${nr},${nc}`;
 
-          // 1. Check bounds
-          if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) { // Use dynamic rows/cols
+          if (nr < 0 || nr >= currentRows || nc < 0 || nc >= currentCol) {
             continue;
           }
-          // 2. Check visited
           if (visited.has(neighborPosKey)) {
             continue;
           }
 
-          // 3. Check if neighbor connects back
           const neighborPiece = newGrid[nr][nc];
           const neighborOpenings = getOpenings(neighborPiece);
           const oppositeDir = getOppositeDir(dir);
 
           if (neighborOpenings.includes(oppositeDir)) {
-            // Connection successful!
             newGrid[nr][nc].isConnected = true;
             visited.add(neighborPosKey);
             q.push({ r: nr, c: nc });
 
-            // 4. Check for Win
             if (neighborPiece.type === 'END') {
               win = true;
             }
@@ -373,10 +501,9 @@ export default function BrokenPipelineGame() {
         }
       }
 
-      // --- FIX to prevent infinite loop ---
       let connectionsChanged = false;
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
+      for (let r = 0; r < currentRows; r++) {
+        for (let c = 0; c < currentCol; c++) {
           if (newGrid[r][c].isConnected !== currentGrid[r][c].isConnected) {
             connectionsChanged = true;
             break;
@@ -388,77 +515,135 @@ export default function BrokenPipelineGame() {
       if (connectionsChanged) {
         setGrid(newGrid);
       }
-      // --- End Fix ---
 
-      // --- NEW STAGE LOGIC ---
       if (win && !stageWon) {
         setStageWon(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         if (currentStage < 3) {
-          // Advance to next stage
-          Alert.alert(`Stage ${currentStage} Complete!`, "Get ready for the next level!", [
-            { text: "Let's Go!", onPress: () => advanceToNextStage() }
-          ]);
+          setAlertConfig({
+            title: `Stage ${currentStage} Complete!`,
+            message: "Get ready for the next level!",
+            buttons: [
+              {
+                text: "Let's Go!",
+                onPress: () => {
+                  setIsAlertVisible(false);
+                  advanceToNextStage();
+                }
+              }
+            ]
+          });
+          setIsAlertVisible(true);
         } else {
-          // Final win
           setGameFinished(true);
-          Alert.alert("All Stages Complete!", "You're a master plumber!", [
-            { text: "Play Again", onPress: () => resetGame() }
-          ]);
+          setAlertConfig({
+            title: "All Stages Complete!",
+            message: "You're a master plumber!",
+            buttons: [
+              {
+                text: "Play Again",
+                onPress: () => {
+                  setIsAlertVisible(false);
+                  resetGame();
+                }
+              }
+            ]
+          });
+          setIsAlertVisible(true);
         }
       }
     };
-    
+
     checkConnections(grid);
 
-  }, [grid, currentStage, stageWon, gameFinished, rows, cols, start, advanceToNextStage, resetGame]); // Re-run whenever the grid or stage changes
+  }, [grid, currentStage, stageWon, gameFinished, advanceToNextStage, resetGame]);
 
   // --- Render ---
 
-  /**
-   * Renders a single pipe cell.
-   */
+  // --- Updated renderCell with tintColor and no View nodes ---
   const renderCell = (piece, r, c) => {
     if (!piece) return <View style={[styles.cell, dynamicSize.cell]} />;
 
+    // 1. Image Logic (for ALL pipes)
+    const imageSource = images[piece.type];
+    const rotationDeg = `${piece.rotation * 90}deg`;
+
+    
+    // 2. Tint Color Logic (for START/END images)
+    let imageTintColor = null; // Default to no tint
+    
+    // ONLY tint the END pipe green when it's connected
+    if (piece.type === 'END' && piece.isConnected) {
+      imageTintColor = '#28a745'; // Green
+    }
+    // else: null (use original image color for L, T, I, Cross)
+
+    // 3. View Overlay Logic
     const openings = getOpenings(piece);
     const has = (dir) => openings.includes(dir);
+    // Apply blue "water" color to all connected stubs/centers
     const connectedStyle = piece.isConnected ? styles.pipeConnected : null;
+
+    // 4. Other styles
+    const fixedStyle = piece.isFixed ? styles.cellFixed : null;
 
     return (
       <TouchableOpacity
         key={`${r}-${c}`}
-        style={[styles.cell, dynamicSize.cell]}
+        style={[styles.cell, dynamicSize.cell, fixedStyle]}
         onPress={() => handlePress(r, c)}
-        activeOpacity={0.7}
+        activeOpacity={piece.isFixed ? 1.0 : 0.7}
       >
-        {/* Center */}
+        {/* 1. Render Base Image (ALL types) */}
+        {imageSource && (
+          <Image
+            style={[
+              styles.pipeImage,
+              dynamicSize.cell,
+              { transform: [{ rotate: rotationDeg }] },
+            ]}
+            source={imageSource}
+            resizeMode="contain"
+            tintColor={imageTintColor} // Apply tint to START/END
+          />
+        )}
+        
+        {/* 2. Render "Water" View Overlay */}
+
+        {/* Center (NOT for START/END) */}
         {piece.type !== 'START' && piece.type !== 'END' && (
           <View style={[styles.pipeCenter, dynamicSize.pipeCenter, connectedStyle]} />
         )}
 
-        {/* Stubs */}
+        {/* Stubs (for ALL types, shows the "water") */}
         {has('TOP') && <View style={[styles.pipeStub, dynamicSize.pipeStubTop, connectedStyle]} />}
         {has('BOTTOM') && <View style={[styles.pipeStub, dynamicSize.pipeStubBottom, connectedStyle]} />}
         {has('LEFT') && <View style={[styles.pipeStub, dynamicSize.pipeStubLeft, connectedStyle]} />}
         {has('RIGHT') && <View style={[styles.pipeStub, dynamicSize.pipeStubRight, connectedStyle]} />}
 
-        {/* Start/End Nodes */}
-        {piece.type === 'START' && <View style={[styles.startNode, dynamicSize.startNode]} />}
-        {piece.type === 'END' && <View style={[styles.endNode, dynamicSize.endNode, piece.isConnected && styles.endNodeConnected]} />}
+        {/* 3. The startNode/endNode Views are REMOVED to fix the bug */}
+        
       </TouchableOpacity>
     );
   };
+  // --- END NEW ---
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.scrollView}
       contentContainerStyle={styles.container}
     >
+      <CustomAlert
+        visible={isAlertVisible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        buttons={alertConfig.buttons}
+      />
+
       <Text style={styles.title}>Pipeline Puzzle</Text>
       <Text style={styles.subtitle}>{gameFinished ? "You win!" : `Stage ${currentStage} of 3`}</Text>
-      
+
       <View style={[styles.gridContainer, { opacity: (stageWon || gameFinished) ? 0.7 : 1.0 }]}>
         {grid.map((row, r) => (
           <View key={r} style={styles.row}>
@@ -466,7 +651,7 @@ export default function BrokenPipelineGame() {
           </View>
         ))}
       </View>
-      
+
       {gameFinished && <Text style={styles.winText}>You Win!</Text>}
 
       <TouchableOpacity style={styles.button} onPress={resetGame}>
@@ -505,65 +690,43 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     backgroundColor: '#fff',
     borderRadius: 8,
-    overflow: 'hidden', // Ensures rounded corners clip children
+    overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
   },
   cell: {
-    // Width and Height are now dynamic
     borderWidth: 1,
     borderColor: '#eee',
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
     overflow: 'hidden',
   },
+  cellFixed: {
+    backgroundColor: '#f0f0f0',
+    borderColor: '#ccc',
+  },
+  
+  pipeImage: {
+    position: 'absolute',
+  },
+
+  // --- Styles for "water" overlay ---
   pipeCenter: {
-    // Width and Height are now dynamic
-    backgroundColor: '#888',
+    backgroundColor: 'transparent', // Make invisible by default
     borderRadius: 2,
   },
   pipeStub: {
     position: 'absolute',
-    backgroundColor: '#888',
-  },
-  pipeStubTop: {
-    // Dimensions are now dynamic
-    top: 0,
-  },
-  pipeStubBottom: {
-    // Dimensions are now dynamic
-    bottom: 0,
-  },
-  pipeStubLeft: {
-    // Dimensions are now dynamic
-    left: 0,
-  },
-  pipeStubRight: {
-    // Dimensions are now dynamic
-    right: 0,
+    backgroundColor: 'transparent', // Make invisible by default
   },
   pipeConnected: {
     backgroundColor: '#007bff', // Blue for connected
   },
-  startNode: {
-    // Dimensions are now dynamic
-    backgroundColor: '#007bff',
-    position: 'absolute',
-    borderWidth: 4,
-    borderColor: 'rgba(255,255,255,0.5)',
-  },
-  endNode: {
-    // Dimensions are now dynamic
-    backgroundColor: '#dc3545', // Red
-    position: 'absolute',
-    borderWidth: 4,
-    borderColor: 'rgba(255,255,255,0.5)',
-  },
-  endNodeConnected: {
-    backgroundColor: '#28a745', // Green when connected
-  },
+  // --- REMOVED: startNode, endNode, endNodeConnected ---
+
   button: {
     marginTop: 30,
     backgroundColor: '#007bff',
@@ -584,7 +747,7 @@ const styles = StyleSheet.create({
   winText: {
     position: 'absolute',
     top: '45%',
-    fontSize: 48,   
+    fontSize: 48,
     fontWeight: 'bold',
     color: '#28a745',
     textShadowColor: 'rgba(0, 0, 0, 0.2)',
@@ -592,10 +755,65 @@ const styles = StyleSheet.create({
     textShadowRadius: 2,
     transform: [{ rotate: '-10deg' }],
   },
+
+  // --- STYLES for CustomAlert (Unchanged) ---
+  alertBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  alertContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    width: '80%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  alertTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  alertMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  alertButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  alertButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  alertButtonPrimary: {
+    backgroundColor: '#007bff',
+  },
+  alertButtonCancel: {
+    backgroundColor: '#f1f1f1',
+  },
+  alertButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  alertButtonTextPrimary: {
+    color: '#fff',
+  },
+  alertButtonTextCancel: {
+    color: '#333',
+  },
 });
-
-
-
-
-
-
