@@ -13,15 +13,71 @@ import {
 
 import * as Haptics from 'expo-haptics';
 
-// --- Import your pipe images ---
+// --- NEW: Pipe Variations Config ---
 // (Please double-check this path!)
-const images = {
-  START: require('../../../assets/pipelines/entrancepipe_1.png'),
-  END: require('../../../assets/pipelines/exitpipe_1.png'),
-  STRAIGHT: require('../../../assets/pipelines/ipipe_1.png'),
-  L_BEND: require('../../../assets/pipelines/lpipe_1.png'),
-  T_BEND: require('../../../assets/pipelines/tpipe_1.png'),
-  CROSS: require('../../../assets/pipelines/crosspipe_1.png'),
+// Tweak the 'weight' to change spawn probability
+const PIPE_VARIATIONS = {
+  START: [
+    { weight: 1, image: require('../../../assets/pipelines/entrancepipe_1.png') },
+    { weight: 1, image: require('../../../assets/pipelines/entrancepipe_2.png') },
+    { weight: 1, image: require('../../../assets/pipelines/entrancepipe_3.png') },
+  ],
+  END: [
+    { weight: 1, image: require('../../../assets/pipelines/exitpipe_1.png') },
+    { weight: 1, image: require('../../../assets/pipelines/exitpipe_2.png') },
+    { weight: 1, image: require('../../../assets/pipelines/exitpipe_3.png') },
+  ],
+
+  STRAIGHT: [
+    { weight: 1, image: require('../../../assets/pipelines/ipipe_1.png') }, // Index 0
+    { weight: 1, image: require('../../../assets/pipelines/ipipe_2.png') }, // Index 1
+    { weight: 1, image: require('../../../assets/pipelines/ipipe_3.png') }, // Index 2
+    { weight: 1, image: require('../../../assets/pipelines/ipipe_4.png') }, // Index 3
+  ],
+  
+  L_BEND: [
+    { weight: 1, image: require('../../../assets/pipelines/lpipe_1.png') },
+  ],
+  T_BEND: [
+    { weight: 1, image: require('../../../assets/pipelines/tpipe_1.png') },
+  ],
+  CROSS: [
+    { weight: 1, image: require('../../../assets/pipelines/crosspipe_1.png') },
+    { weight: 1, image: require('../../../assets/pipelines/crosspipe_2.png') },
+    { weight: 1, image: require('../../../assets/pipelines/crosspipe_3.png') },
+    { weight: 1, image: require('../../../assets/pipelines/crosspipe_4.png') },
+  ],
+};
+// --- END NEW ---
+
+// --- NEW: Weighted Random Function ---
+/**
+ * Selects a random pipe image based on weighted probabilities
+ * @param {string} type - The pipe type (e.g., 'L_BEND', 'START')
+ * @returns {ImageSourcePropType} The require() source for the chosen image
+ */
+const getRandomPipeVariation = (type) => {
+  const variations = PIPE_VARIATIONS[type];
+  if (!variations || variations.length === 0) {
+    return null; // Or a fallback image
+  }
+
+  // 1. Calculate the total weight
+  const totalWeight = variations.reduce((sum, v) => sum + v.weight, 0);
+
+  // 2. Get a random number between 0 and totalWeight
+  let random = Math.random() * totalWeight;
+
+  // 3. Find which variation the random number falls into
+  for (const variation of variations) {
+    if (random < variation.weight) {
+      return variation.image;
+    }
+    random -= variation.weight;
+  }
+
+  // Fallback (shouldn't happen, but good to have)
+  return variations[0].image;
 };
 // --- END NEW ---
 
@@ -61,11 +117,11 @@ const getPipeFromOpenings = (openings) => {
 };
 
 const getTerminalRotation = (dir) => {
-  // Assumes base 'UP' for START/END
-  if (dir === 'TOP') return 0;
-  if (dir === 'RIGHT') return 1;
-  if (dir === 'BOTTOM') return 2;
-  if (dir === 'LEFT') return 3;
+  // NEW: Assumes base 'RIGHT' for START/END
+  if (dir === 'RIGHT') return 0;
+  if (dir === 'BOTTOM') return 1;
+  if (dir === 'LEFT') return 2;
+  if (dir === 'TOP') return 3;
   return 0;
 };
 
@@ -104,6 +160,7 @@ const createInitialLevel = (stage) => {
         rotation: Math.floor(Math.random() * 4),
         isConnected: false,
         isFixed: false,
+        image: getRandomPipeVariation(type), // --- ADDED ---
       };
     })
   );
@@ -164,14 +221,52 @@ const createInitialLevel = (stage) => {
     if (i === 0) {
       // START Pipe
       const dir = getDir(pos, path[i + 1]);
-      const rotation = getTerminalRotation(dir);
-      grid[pos.r][pos.c] = { type: 'START', rotation, isFixed: true, isConnected: true };
+      const rotation = getTerminalRotation(dir); // Gets new rotation val
+      
+      // --- Logic updated for new rotation values ---
+      let startImage;
+      if (rotation === 0) { // 0 is now 'RIGHT'
+        startImage = PIPE_VARIATIONS.START[2].image; // entrancepipe_3.png
+      } else if (rotation === 1) { // 1 is now 'BOTTOM'
+        startImage = PIPE_VARIATIONS.START[1].image; // entrancepipe_2.png
+      } else { // 2 ('LEFT') or 3 ('TOP')
+        startImage = PIPE_VARIATIONS.START[0].image; // entrancepipe_1.png
+      }
+      // --- END NEW ---
+
+      grid[pos.r][pos.c] = { 
+        type: 'START', 
+        rotation, 
+        isFixed: true, 
+        isConnected: true,
+        image: startImage, // Use the selected image
+      };
+   // ...
     } else if (i === path.length - 1) {
       // END Pipe
       const dir = getDir(pos, path[i - 1]);
       const rotation = getTerminalRotation(dir);
-      grid[pos.r][pos.c] = { type: 'END', rotation, isFixed: true, isConnected: false };
+      
+      // --- NEW: Logic to select END image based on rotation ---
+      let endImage;
+      if (rotation === 2) { // 2 is 'LEFT'
+        endImage = PIPE_VARIATIONS.END[1].image; // exitpipe_2.png
+      } else if (rotation === 3) { // 3 is 'UP'
+        endImage = PIPE_VARIATIONS.END[2].image; // exitpipe_3.png
+      } else { // 0 ('RIGHT') or 1 ('BOTTOM')
+        endImage = PIPE_VARIATIONS.END[0].image; // exitpipe_1.png
+      }
+      // --- END NEW ---
+
+      grid[pos.r][pos.c] = { 
+        type: 'END', 
+        rotation, 
+        isFixed: true, 
+        isConnected: false,
+        image: endImage, // <-- Use the selected image
+      };
     } else {
+    
       // MIDDLE Pipe
       const dir1 = getDir(pos, path[i - 1]);
       const dir2 = getDir(pos, path[i + 1]);
@@ -205,7 +300,13 @@ const createInitialLevel = (stage) => {
         }
       }
       
-      grid[pos.r][pos.c] = { type: finalType, rotation: finalRotation, isFixed: false, isConnected: false };
+      grid[pos.r][pos.c] = { 
+        type: finalType, 
+        rotation: finalRotation, 
+        isFixed: false, 
+        isConnected: false,
+        image: getRandomPipeVariation(finalType), // --- ADDED ---
+      };
       solutionRotations[posKey] = finalRotation;
     }
   }
@@ -256,19 +357,19 @@ const getOpenings = (piece) => {
   const { type, rotation } = piece;
 
   switch (type) {
-    // We assume the default (rotation 0) View for START/END points UP.
+    // NEW: Assumes base (rotation 0) for START/END points RIGHT
     case 'START':
-      if (rotation === 0) return ['TOP'];    // 0deg
-      if (rotation === 1) return ['RIGHT'];  // 90deg
-      if (rotation === 2) return ['BOTTOM']; // 180deg
-      if (rotation === 3) return ['LEFT'];   // 270deg
+      if (rotation === 0) return ['RIGHT'];  // 0deg
+      if (rotation === 1) return ['BOTTOM']; // 90deg
+      if (rotation === 2) return ['LEFT'];   // 180deg
+      if (rotation === 3) return ['TOP'];    // 270deg
       return [];
 
     case 'END':
-      if (rotation === 0) return ['TOP'];    // 0deg
-      if (rotation === 1) return ['RIGHT'];  // 90deg
-      if (rotation === 2) return ['BOTTOM']; // 180deg
-      if (rotation === 3) return ['LEFT'];   // 270deg
+      if (rotation === 0) return ['RIGHT'];  // 0deg
+      if (rotation === 1) return ['BOTTOM']; // 90deg
+      if (rotation === 2) return ['LEFT'];   // 180deg
+      if (rotation === 3) return ['TOP'];    // 270deg
       return [];
 
     case 'STRAIGHT':
@@ -561,28 +662,23 @@ export default function BrokenPipelineGame() {
 
   // --- Render ---
 
-  // --- Updated renderCell with tintColor and no View nodes ---
+  // --- Updated renderCell with randomization and tint logic ---
   const renderCell = (piece, r, c) => {
     if (!piece) return <View style={[styles.cell, dynamicSize.cell]} />;
 
-    // 1. Image Logic (for ALL pipes)
-    const imageSource = images[piece.type];
+    // 1. Image Logic
+    const imageSource = piece.image; // <-- Use pre-selected image
     const rotationDeg = `${piece.rotation * 90}deg`;
 
-    
-    // 2. Tint Color Logic (for START/END images)
+    // 2. Tint Color Logic (Only green tint for connected END)
     let imageTintColor = null; // Default to no tint
-    
-    // ONLY tint the END pipe green when it's connected
     if (piece.type === 'END' && piece.isConnected) {
       imageTintColor = '#28a745'; // Green
     }
-    // else: null (use original image color for L, T, I, Cross)
 
     // 3. View Overlay Logic
     const openings = getOpenings(piece);
     const has = (dir) => openings.includes(dir);
-    // Apply blue "water" color to all connected stubs/centers
     const connectedStyle = piece.isConnected ? styles.pipeConnected : null;
 
     // 4. Other styles
@@ -605,7 +701,7 @@ export default function BrokenPipelineGame() {
             ]}
             source={imageSource}
             resizeMode="contain"
-            tintColor={imageTintColor} // Apply tint to START/END
+            tintColor={imageTintColor} // Apply tint to END pipe
           />
         )}
         
@@ -621,8 +717,6 @@ export default function BrokenPipelineGame() {
         {has('BOTTOM') && <View style={[styles.pipeStub, dynamicSize.pipeStubBottom, connectedStyle]} />}
         {has('LEFT') && <View style={[styles.pipeStub, dynamicSize.pipeStubLeft, connectedStyle]} />}
         {has('RIGHT') && <View style={[styles.pipeStub, dynamicSize.pipeStubRight, connectedStyle]} />}
-
-        {/* 3. The startNode/endNode Views are REMOVED to fix the bug */}
         
       </TouchableOpacity>
     );
