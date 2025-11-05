@@ -43,7 +43,22 @@ const images = {
     require('../../../assets/pipelines/lpipe_liz_bottomright.png'), 
     require('../../../assets/pipelines/lpipe_liz_bottomleft.png'), 
     require('../../../assets/pipelines/lpipe_liz_topleft.png'),   
-  ]
+  ],
+
+  T_BEND_PLAIN: [
+    require('../../../assets/pipelines/tpipe_plain_left.png'),
+    require('../../../assets/pipelines/tpipe_plain_down.png'),       
+    require('../../../assets/pipelines/tpipe_plain_right.png'), 
+    require('../../../assets/pipelines/tpipe_plain_up.png'),    
+  ],
+  
+
+  T_BEND_WEB: [
+    require('../../../assets/pipelines/tpipe_web_left.png'), 
+    require('../../../assets/pipelines/tpipe_web_up.png'),   
+    require('../../../assets/pipelines/tpipe_web_right.png'),
+    require('../../../assets/pipelines/tpipe_web_down.png'),   
+  ],
 };
 
 // endregion Images 
@@ -51,9 +66,9 @@ const images = {
 // endregion End Images
 
 const STAGE_CONFIG = {
-  1: { rows: 4, cols: 4, start: { r: 0, c: 0 }, end: { r: 3, c: 3 }, minPathLength: 7, numRatPipes: 1, numLizPipes: 1 },
-  2: { rows: 5, cols: 5, start: { r: 0, c: 0 }, end: { r: 4, c: 4 }, minPathLength: 12, numRatPipes: 2, numLizPipes: 2 },
-  3: { rows: 6, cols: 6, start: { r: 0, c: 0 }, end: { r: 5, c: 5 }, minPathLength: 20, numRatPipes: 3, numLizPipes: 3 },
+  1: { rows: 4, cols: 4, start: { r: 0, c: 0 }, end: { r: 3, c: 3 }, minPathLength: 7, numRatPipes: 1, numLizPipes: 1, numWebPipes: 1 },
+  2: { rows: 5, cols: 5, start: { r: 0, c: 0 }, end: { r: 4, c: 4 }, minPathLength: 12, numRatPipes: 3, numLizPipes: 1, numWebPipes: 1 },
+  3: { rows: 6, cols: 6, start: { r: 0, c: 0 }, end: { r: 5, c: 5 }, minPathLength: 20, numRatPipes: 5, numLizPipes: 2, numWebPipes: 1 },
 };
 
 const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
@@ -100,7 +115,7 @@ const shuffleArray = (array) => {
 };
 
 const createInitialLevel = (stage) => {
-  const { rows, cols, start, end, minPathLength, numRatPipes, numLizPipes } = STAGE_CONFIG[stage];
+  const { rows, cols, start, end, minPathLength, numRatPipes, numLizPipes, numWebPipes } = STAGE_CONFIG[stage];
 
   // 1. Fill grid with random junk pipes first
   const grid = Array(rows).fill(null).map(() =>
@@ -213,15 +228,25 @@ const createInitialLevel = (stage) => {
         
         if (randType < 0.7) { 
           finalType = 'T_BEND';
+          // baseType 'STRAIGHT'
           if (baseType === 'STRAIGHT') {
-            finalRotation = (baseRotation === 0) ? (Math.random() < 0.5 ? 0 : 2) : (Math.random() < 0.5 ? 1 : 3);
-          } else {
-            if (baseRotation === 0) finalRotation = Math.random() < 0.5 ? 0 : 3;
-            else if (baseRotation === 1) finalRotation = Math.random() < 0.5 ? 0 : 1;
-            else if (baseRotation === 2) finalRotation = Math.random() < 0.5 ? 1 : 2;
-            else if (baseRotation === 3) finalRotation = Math.random() < 0.5 ? 2 : 3;
+            // (rot 0) Horizontal L/R -> T-Bend (rot 0) RBL or (rot 2) LTR
+            if (baseRotation === 0) finalRotation = Math.random() < 0.5 ? 0 : 2;
+            // (rot 1) Vertical T/B -> T-Bend (rot 1) BLT or (rot 3) TRB
+            else finalRotation = Math.random() < 0.5 ? 1 : 3;
+          } 
+          // baseType 'L_BEND'
+          else {
+            // (rot 0) T/R -> T-Bend (rot 2) LTR or (rot 3) TRB
+            if (baseRotation === 0) finalRotation = Math.random() < 0.5 ? 2 : 3;
+            // (rot 1) R/B -> T-Bend (rot 0) RBL or (rot 3) TRB
+            else if (baseRotation === 1) finalRotation = Math.random() < 0.5 ? 0 : 3;
+            // (rot 2) B/L -> T-Bend (rot 0) RBL or (rot 1) BLT
+            else if (baseRotation === 2) finalRotation = Math.random() < 0.5 ? 0 : 1;
+            // (rot 3) L/T -> T-Bend (rot 1) BLT or (rot 2) LTR
+            else if (baseRotation === 3) finalRotation = Math.random() < 0.5 ? 1 : 2;
           }
-        } 
+        }
         else {
           finalType = 'CROSS';
           finalRotation = 0;
@@ -323,10 +348,35 @@ const createInitialLevel = (stage) => {
     
     grid[selectedPipe.r][selectedPipe.c].isLizPipe = true;
   }
+  const tBendPipeCoords = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      // Find T_BEND pipes that aren't already fixed obstacles
+      if (grid[r][c].type === 'T_BEND' && !grid[r][c].isFixed) {
+        tBendPipeCoords.push({ r, c });
+      }
+    }
+  }
+
+  // Define how many web pipes you want (from config)
+  const numberOfWebPipes = numWebPipes;
+
+  // Pick N random pipes
+  for (let i = 0; i < numberOfWebPipes; i++) {
+    if (tBendPipeCoords.length === 0) {
+      break; 
+    }
+    
+    const randomIndex = Math.floor(Math.random() * tBendPipeCoords.length);
+    const [ selectedPipe ] = tBendPipeCoords.splice(randomIndex, 1); 
+    
+    grid[selectedPipe.r][selectedPipe.c].isWebPipe = true;
+  }
   // --- END NEW ---
 
   return grid;
 };
+
 
 // --- getOpenings (Unchanged from "View" version) ---
 const getOpenings = (piece) => {
@@ -362,10 +412,11 @@ const getOpenings = (piece) => {
       return [];
 
     case 'T_BEND':
-      if (rotation === 0) return ['TOP', 'RIGHT', 'BOTTOM'];
-      if (rotation === 1) return ['RIGHT', 'BOTTOM', 'LEFT'];
-      if (rotation === 2) return ['BOTTOM', 'LEFT', 'TOP'];
-      if (rotation === 3) return ['LEFT', 'TOP', 'RIGHT'];
+      
+      if (rotation === 0) return ['BOTTOM', 'LEFT', 'TOP'];   // Missing RIGHT
+      if (rotation === 1) return ['LEFT', 'TOP', 'RIGHT'];    // Missing BOTTOM
+      if (rotation === 2) return ['TOP', 'RIGHT', 'BOTTOM'];  // Missing LEFT
+      if (rotation === 3) return ['RIGHT', 'BOTTOM', 'LEFT']; // Missing TOP
       return [];
 
     case 'CROSS':
@@ -695,7 +746,6 @@ export default function BrokenPipelineGame() {
       }
       rotationDeg = 0;
     
-    // --- UPDATED: L_BEND LOGIC ---
     } else if (piece.type === 'L_BEND') {
       if (piece.isLizPipe) {
         imageSource = images.L_BEND_LIZ[piece.rotation];
@@ -703,8 +753,17 @@ export default function BrokenPipelineGame() {
         imageSource = images.L_BEND_PLAIN[piece.rotation];
       }
       rotationDeg = 0;
+    
+    // --- NEW: T_BEND LOGIC ---
+    } else if (piece.type === 'T_BEND') {
+      if (piece.isWebPipe) {
+        imageSource = images.T_BEND_WEB[piece.rotation];
+      } else {
+        imageSource = images.T_BEND_PLAIN[piece.rotation];
+      }
+      rotationDeg = 0;
     }
-    // --- END UPDATED L_BEND LOGIC ---
+    // --- END NEW T_BEND LOGIC ---
 
     return (
       <TouchableOpacity
@@ -713,7 +772,7 @@ export default function BrokenPipelineGame() {
         onPress={() => handlePress(r, c)}
         activeOpacity={piece.isFixed ? 1.0 : 0.7}
       >
-        {/* 1. Render Image Layer (START, END, STRAIGHT, OR L_BEND) */}
+        {/* 1. Render Image Layer (START, END, STRAIGHT, L_BEND, T_BEND) */}
         {imageSource && (
           <Image
             style={[
@@ -727,7 +786,7 @@ export default function BrokenPipelineGame() {
           />
         )}
 
-        {/* 2. Render View Layer (T_BEND, CROSS, AND all centers/stubs) */}
+        {/* 2. Render View Layer (CROSS, AND all centers/stubs) */}
         
         {/* Center (for STRAIGHT, L_BEND, T_BEND, CROSS) */}
         {piece.type !== 'START' && piece.type !== 'END' && (
