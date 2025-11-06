@@ -59,6 +59,13 @@ const images = {
     require('../../../assets/pipelines/tpipe_web_right.png'),
     require('../../../assets/pipelines/tpipe_web_down.png'),   
   ],
+
+  CROSS_VARIANTS: [
+    require('../../../assets/pipelines/crosspipe_plain.png'), // Index 0
+    require('../../../assets/pipelines/crosspipe_v2.png'),    // Index 1
+    require('../../../assets/pipelines/crosspipe_v3.png'),    // Index 2
+    require('../../../assets/pipelines/crosspipe_v4.png'),    // Index 3
+  ]
 };
 
 // endregion Images 
@@ -66,7 +73,7 @@ const images = {
 // endregion End Images
 
 const STAGE_CONFIG = {
-  1: { rows: 4, cols: 4, start: { r: 0, c: 0 }, end: { r: 3, c: 3 }, minPathLength: 7, numRatPipes: 1, numLizPipes: 1, numWebPipes: 1 },
+  1: { rows: 4, cols: 4, start: { r: 0, c: 0 }, end: { r: 3, c: 3 }, minPathLength: 7, numRatPipes: 1, numLizPipes: 1, numWebPipes: 0 },
   2: { rows: 5, cols: 5, start: { r: 0, c: 0 }, end: { r: 4, c: 4 }, minPathLength: 12, numRatPipes: 3, numLizPipes: 1, numWebPipes: 1 },
   3: { rows: 6, cols: 6, start: { r: 0, c: 0 }, end: { r: 5, c: 5 }, minPathLength: 20, numRatPipes: 5, numLizPipes: 2, numWebPipes: 1 },
 };
@@ -129,20 +136,34 @@ const createInitialLevel = (stage) => {
         type = 'L_BEND';
       }
       // 3% chance for T_BEND
-      else if (rand < 0.99) {
-        type = 'T_BEND';
-      }
-      // 1% chance for CROSS
-      else {
-        type = 'CROSS';
-      }
+      else if (rand < 0.99) {
+        type = 'T_BEND';
+      }
+      // 1% chance for CROSS
+      else {
+        // --- NEW: Only allow CROSS junk on Stage 1 ---
+        if (stage === 1) {
+          type = 'CROSS';
+        } else {
+          // For stages 2 & 3, default to an L_BEND
+          type = 'L_BEND';
+        }
+      }
 
-      return {
+      const piece = {
         type: type,
         rotation: Math.floor(Math.random() * 4),
         isConnected: false,
         isFixed: false,
       };
+
+      // --- NEW: Assign a random variant to CROSS pipes ---
+      if (piece.type === 'CROSS') {
+        piece.variant = Math.floor(Math.random() * images.CROSS_VARIANTS.length); // 0, 1, 2, or 3
+      }
+      // --- END NEW ---
+
+      return piece;
     })
   );
 
@@ -252,11 +273,25 @@ const createInitialLevel = (stage) => {
           finalRotation = 0;
         }
       }
-      
-      grid[pos.r][pos.c] = { type: finalType, rotation: finalRotation, isFixed: false, isConnected: false };
-      solutionRotations[posKey] = finalRotation;
-    }
-  }
+      
+      // --- THIS IS THE FIX ---
+      const newPiece = { 
+        type: finalType, 
+        rotation: finalRotation, 
+        isFixed: false, 
+        isConnected: false 
+      };
+
+      // Also assign a variant if the solution pipe is a CROSS
+      if (newPiece.type === 'CROSS') {
+        newPiece.variant = Math.floor(Math.random() * images.CROSS_VARIANTS.length);
+      }
+      // --- END FIX ---
+      
+      grid[pos.r][pos.c] = newPiece;
+      solutionRotations[posKey] = finalRotation;
+    }
+  }
 
   // 4. Randomize rotations of non-fixed pipes
   for (let r = 0; r < rows; r++) {
@@ -754,7 +789,6 @@ export default function BrokenPipelineGame() {
       }
       rotationDeg = 0;
     
-    // --- NEW: T_BEND LOGIC ---
     } else if (piece.type === 'T_BEND') {
       if (piece.isWebPipe) {
         imageSource = images.T_BEND_WEB[piece.rotation];
@@ -762,17 +796,26 @@ export default function BrokenPipelineGame() {
         imageSource = images.T_BEND_PLAIN[piece.rotation];
       }
       rotationDeg = 0;
+
+    // --- NEW: CROSS LOGIC ---
+    } else if (piece.type === 'CROSS') {
+      // Pick a random variant that was assigned during level creation
+      imageSource = images.CROSS_VARIANTS[piece.variant];
+      rotationDeg = 0; // Cross pipes are not rotatable, so no image rotation
     }
-    // --- END NEW T_BEND LOGIC ---
+    // --- END NEW CROSS LOGIC ---
+
+    // Determine activeOpacity
+    const touchableOpacityActiveOpacity = (piece.isFixed || piece.type === 'CROSS') ? 1.0 : 0.7;
 
     return (
       <TouchableOpacity
         key={`${r}-${c}`}
         style={[styles.cell, dynamicSize.cell, fixedStyle]}
         onPress={() => handlePress(r, c)}
-        activeOpacity={piece.isFixed ? 1.0 : 0.7}
+        activeOpacity={touchableOpacityActiveOpacity} // Updated activeOpacity
       >
-        {/* 1. Render Image Layer (START, END, STRAIGHT, L_BEND, T_BEND) */}
+        {/* 1. Render Image Layer (START, END, STRAIGHT, L_BEND, T_BEND, CROSS) */}
         {imageSource && (
           <Image
             style={[
@@ -786,7 +829,7 @@ export default function BrokenPipelineGame() {
           />
         )}
 
-        {/* 2. Render View Layer (CROSS, AND all centers/stubs) */}
+        {/* 2. Render View Layer (all centers/stubs) */}
         
         {/* Center (for STRAIGHT, L_BEND, T_BEND, CROSS) */}
         {piece.type !== 'START' && piece.type !== 'END' && (
