@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Modal, ScrollView, TouchableOpacity } from "react-native";
-import { X, Sparkles, Dices, Wrench, Search, CloudOff } from "lucide-react-native";
+import { X, Sparkles, Dices, Wrench, Search, CloudOff, Castle, Cast } from "lucide-react-native";
 import { styles } from "../styles/AppStyles";
 
 // Import all game components
@@ -9,6 +9,8 @@ import BrokenPipelineGame from "./games/BrokenPipelineGame";
 import FindTheLeakGame from "./games/FindTheLeakGame";
 import BlockTheHazeGame from "./games/BlockTheHazeGame";
 import WheelOfFortuneGame from "./games/WheelOfFortuneGame";
+import TowerDefenseGame from "./games/TowerDefenseGame";
+
 import GameHubScreen from "./games/GameHubScreen";
 
 const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
@@ -46,6 +48,12 @@ const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
       key: "tap",
       bonus: "+100 Points",
       iconComponent: <Sparkles size={40} color="#3B82F6" />,
+    },
+    {
+      name: "Tower Defense Game",
+      key: "towerDefense",
+      bonus: "+150 Points",
+      iconComponent: <Castle size={40} color="#3B82F6" />,
     },
   ];
 
@@ -121,6 +129,14 @@ const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
             isPracticeMode={isPracticeMode}
           />
         );
+      case "towerDefense":
+        return (
+          <TowerDefenseGame
+            onEarnPoints={handleEarnPointsInGame}
+            onEndGame={handleEndGame}
+            isPracticeMode={isPracticeMode}
+          />
+        );  
       default: // null activeGameKey means show the Hub
         return (
           <GameHubScreen
