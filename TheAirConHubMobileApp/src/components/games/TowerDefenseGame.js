@@ -1,23 +1,48 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-// MODIFIED: Removed TouchableOpacity from here, View is sufficient
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+// MODIFIED: Cleaned up imports
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Dimensions, 
+  ImageBackground,
+  Image
+} from 'react-native';
 import { Wind, Bug, ShieldAlert, Target, Coins, Heart, Waves, CheckCircle, XCircle } from 'lucide-react-native';
+import Svg, { Polyline } from 'react-native-svg';
 import { styles as appStyles } from '../../styles/AppStyles';
 
-// ... (GAME_CONFIG, path, TOWER_CONFIG, etc. are unchanged) ...
+const gameAssets = {
+  map: require('../../../assets/towerDefense/hvac.jpg'), 
+};
+
+
 const { width } = Dimensions.get('window');
 const GAME_AREA_HEIGHT = 350;
-const GAME_AREA_WIDTH = width * 0.9; // Match game card width
-const TILE_SIZE = 40; // Size of grid squares for placement
+const GAME_AREA_WIDTH = 350; // Set to height to make it square
+const TILE_SIZE = GAME_AREA_WIDTH / 10; // 10 tiles wide
+const T_CENTER = TILE_SIZE / 2; // Helper for tile center
+
+
 
 const path = [
-  { x: 0, y: TILE_SIZE * 2 },
-  { x: TILE_SIZE * 3, y: TILE_SIZE * 2 },
-  { x: TILE_SIZE * 3, y: TILE_SIZE * 5 },
-  { x: TILE_SIZE * 6, y: TILE_SIZE * 5 },
-  { x: TILE_SIZE * 6, y: TILE_SIZE * 1 },
-  { x: GAME_AREA_WIDTH, y: TILE_SIZE * 1 },
+  { x: T_CENTER * 2.55, y: GAME_AREA_HEIGHT - 40 }, // Start 
+  { x: T_CENTER * 2.55, y: T_CENTER * 17.2 }, // Waypoint 1: Fan 
+  { x: T_CENTER * 2.55, y: T_CENTER * 10 },  // Waypoint 2: Corner 
+  { x: T_CENTER * 3.7, y: T_CENTER * 8.5 },  // Waypoint 3: Corner 
+  { x: T_CENTER * 3.7, y: T_CENTER * 3.8 },  // Waypoint 4: Corner 
+  { x: T_CENTER * 16.2, y: T_CENTER * 3.8 }, // Waypoint 5: Corner 
+  { x: T_CENTER * 16.2, y: T_CENTER * 17.5 },// Waypoint 6: Corner 
+  { x: T_CENTER * 6.25, y: T_CENTER * 17.5 }, // Waypoint 7: Corner 
+  { x: T_CENTER * 6.25, y: T_CENTER * 17.5 }, // Waypoint 8: Grate 
+  { x: T_CENTER * 6.25, y: GAME_AREA_HEIGHT -43.75 } // End 
 ];
+
+const svgPathString = path
+  .map(p => `${p.x},${p.y}`)
+  .join(' ');
+
 
 const TOWER_CONFIG = {
   acTower: {
@@ -33,7 +58,7 @@ const TOWER_CONFIG = {
 const ENEMY_CONFIG = {
   virus: {
     health: 50,
-    speed: 1, // pixels per game tick
+    speed: 1.5, // pixels per game tick
     money: 5,
     size: 20,
     icon: (color) => <Bug size={18} color={color} />,
@@ -430,6 +455,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     <View style={appStyles.gameCard}>
       {/* Stats Header (Unchanged) */}
       <View style={appStyles.leakGameHeader}>
+        {/* ... (Health, Money, Wave items) ... */}
         <View style={appStyles.leakGameHeaderItem}>
           <Text style={appStyles.leakGameHeaderLabel}>Health</Text>
           <Text style={[appStyles.leakGameHeaderValue, { color: '#28a745' }]}>
@@ -450,34 +476,33 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
         </View>
       </View>
 
-      {/* MODIFIED: Game Area (now a View with responder props) */}
+      {/* MODIFIED: Wrapped in a View, which now holds the ref and responders */}
       <View
         ref={gameAreaRef}
         style={localStyles.gameArea}
-        onStartShouldSetResponder={() => true} // Always capture taps
-        onResponderGrant={updatePlacementPos}  // Set initial pos on touch down
-        onResponderMove={updatePlacementPos}   // Update pos on drag
-        onResponderRelease={handlePlaceTower} // Place tower on touch up
+        onStartShouldSetResponder={() => true}
+        onResponderGrant={updatePlacementPos}
+        onResponderMove={updatePlacementPos}
+        onResponderRelease={handlePlaceTower}
       >
-        {/* Draw Path (Unchanged) */}
-        {path.map((p, i) =>
-          i < path.length - 1 ? (
-            <View
-              key={`path_${i}`}
-              style={[
-                localStyles.pathSegment,
-                {
-                  left: Math.min(p.x, path[i + 1].x),
-                  top: Math.min(p.y, path[i + 1].y),
-                  width: Math.abs(p.x - path[i + 1].x) || 5,
-                  height: Math.abs(p.y - path[i + 1].y) || 5,
-                },
-              ]}
-            />
-          ) : null
-        )}
+        {/* Child 1: The Background (MODIFIED to use Image) */}
+        <Image
+          source={gameAssets.map}
+          style={[StyleSheet.absoluteFill, { width: '100%', height: '100%' }]}
+          resizeMode="stretch" // resizeMode on a plain Image is more reliable
+        />
+        
+        {/* Child 2: The SVG Path Overlay
+        <Svg height={GAME_AREA_HEIGHT} width={GAME_AREA_WIDTH} style={{ position: 'absolute' }}>
+          <Polyline
+            points={svgPathString}
+            fill="none"
+            stroke="rgba(255, 255, 255, 0.4)" // Semi-transparent white
+            strokeWidth="3"
+          />
+        </Svg> */}
 
-        {/* Draw Towers (Unchanged) */}
+        {/* Child 3: Towers */}
         {towers.map(tower => (
           <View
             key={tower.id}
@@ -490,7 +515,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
           </View>
         ))}
 
-        {/* Draw Enemies (Unchanged) */}
+        {/* Child 4: Enemies */}
         {enemies.map(enemy => (
           <View
             key={enemy.id}
@@ -506,7 +531,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
           </View>
         ))}
         
-        {/* Draw Projectiles (Unchanged) */}
+        {/* Child 5: Projectiles */}
         {projectiles.map(p => (
           <View
             key={p.id}
@@ -517,7 +542,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
           />
         ))}
 
-        {/* MODIFIED: Draw Tower Placement Preview */}
+        {/* Child 6: Tower Placement Preview */}
         {placingTowerType && placementPos && (
           <View
             style={[
@@ -525,13 +550,11 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
               {
                 width: TOWER_CONFIG[placingTowerType].range * 2,
                 height: TOWER_CONFIG[placingTowerType].range * 2,
-                // Position preview based on finger position
                 left: placementPos.x - TOWER_CONFIG[placingTowerType].range,
                 top: placementPos.y - TOWER_CONFIG[placingTowerType].range,
               },
             ]}
           >
-            {/* Added a small icon in the center of the preview */}
             <View style={[
               localStyles.towerPreviewIcon,
               { 
@@ -547,6 +570,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 
       {/* UI Controls (Unchanged) */}
       <View style={localStyles.controlsContainer}>
+        {/* ... (A/C Tower Button) ... */}
         <TouchableOpacity
           style={localStyles.controlButton}
           onPress={() => handleSelectTower('acTower')}
@@ -557,7 +581,8 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
           </Text>
           {placingTowerType === 'acTower' && <View style={localStyles.selectedIndicator} />}
         </TouchableOpacity>
-
+        
+        {/* ... (Start Wave Button) ... */}
         <TouchableOpacity
           style={[appStyles.startButton, { flex: 1, marginLeft: 10 }]}
           onPress={startWave}
@@ -572,23 +597,26 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
   );
 };
 
+
 // --- 4. Local Styles ---
 
 const localStyles = StyleSheet.create({
   gameArea: {
     height: GAME_AREA_HEIGHT,
-    width: '100%',
-    backgroundColor: '#1F2937',
+    width: GAME_AREA_WIDTH, // MODIFIED: Fixed width to match height
+    backgroundColor: 'black', // MODIFIED: Match image background
     borderRadius: 12,
     position: 'relative',
     overflow: 'hidden',
     marginTop: 10,
     borderWidth: 2,
     borderColor: '#374151',
+    alignSelf: 'center', // NEW: Center the square game area
   },
   pathSegment: {
     position: 'absolute',
-    backgroundColor: '#4B5563',
+    backgroundColor: 'rgba(250, 252, 254, 0.5)', // Semi-transparent gray
+    opacity: 0.5, // You can adjust this value (0.0 to 1.0)
   },
   tower: {
     position: 'absolute',
