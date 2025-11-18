@@ -15,6 +15,8 @@ import { styles as appStyles } from '../../styles/AppStyles';
 
 const gameAssets = {
   map: require('../../../assets/towerDefense/hvac.jpg'), 
+  tower: require('../../../assets/towerDefense/tower_cassette.gif'), // <-- ADDED
+  enemy: require('../../../assets/towerDefense/enemy_heat.gif'),
 };
 
 
@@ -50,8 +52,9 @@ const TOWER_CONFIG = {
     range: 100, // pixels
     damage: 50,
     fireRate: 1000, // ms
-    size: 30,
-    icon: (color) => <Wind size={24} color={color} />,
+    size: 60,
+    icon: (color) => <Wind size={24} color={color} />, // For the UI button
+    sprite: gameAssets.tower, // <-- ADDED: For the in-game tower
   },
 };
 
@@ -60,8 +63,9 @@ const ENEMY_CONFIG = {
     health: 50,
     speed: 1.5, // pixels per game tick
     money: 5,
-    size: 20,
-    icon: (color) => <Bug size={18} color={color} />,
+    size: 40,
+    icon: (color) => <Bug size={18} color={color} />, // Fallback
+    sprite: gameAssets.enemy, // <-- ADDED: For the in-game enemy
   },
 };
 
@@ -511,7 +515,8 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
               { left: tower.x - tower.size / 2, top: tower.y - tower.size / 2, width: tower.size, height: tower.size },
             ]}
           >
-            {tower.icon('white')}
+            {/* MODIFIED: Use the Image component */}
+            <Image source={tower.sprite} style={localStyles.spriteImage} />
           </View>
         ))}
 
@@ -524,7 +529,8 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
               { left: enemy.x - enemy.size / 2, top: enemy.y - enemy.size / 2, width: enemy.size, height: enemy.size },
             ]}
           >
-            {enemy.icon('white')}
+            {/* MODIFIED: Use the Image component */}
+            <Image source={enemy.sprite} style={localStyles.spriteImage} />
             <View style={localStyles.healthBarOuter}>
               <View style={[localStyles.healthBarInner, { width: `${(enemy.health / enemy.maxHealth) * 100}%` }]} />
             </View>
@@ -618,22 +624,27 @@ const localStyles = StyleSheet.create({
     backgroundColor: 'rgba(250, 252, 254, 0.5)', // Semi-transparent gray
     opacity: 0.5, // You can adjust this value (0.0 to 1.0)
   },
+
   tower: {
     position: 'absolute',
-    backgroundColor: '#3B82F6',
     borderRadius: 5,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
   },
   enemy: {
     position: 'absolute',
-    backgroundColor: '#EF4444',
+    // backgroundColor: '#EF4444', // <-- REMOVED
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // --- ADD THIS NEW STYLE ---
+  spriteImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'contain',
+  },
+  
   healthBarOuter: {
     position: 'absolute',
     top: -6,
