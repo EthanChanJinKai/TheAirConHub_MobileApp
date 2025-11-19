@@ -15,7 +15,7 @@ import { styles as appStyles } from '../../styles/AppStyles';
 
 const gameAssets = {
   map: require('../../../assets/towerDefense/hvac.jpg'), 
-  tower: require('../../../assets/towerDefense/tower_cassette.gif'), // <-- ADDED
+  tower: require('../../../assets/towerDefense/tower_cassette.gif'),
   enemy: require('../../../assets/towerDefense/enemy_heat.gif'),
 };
 
@@ -25,8 +25,6 @@ const GAME_AREA_HEIGHT = 350;
 const GAME_AREA_WIDTH = 350; // Set to height to make it square
 const TILE_SIZE = GAME_AREA_WIDTH / 10; // 10 tiles wide
 const T_CENTER = TILE_SIZE / 2; // Helper for tile center
-
-
 
 const path = [
   { x: T_CENTER * 2.55, y: GAME_AREA_HEIGHT - 40 }, // Start 
@@ -41,9 +39,48 @@ const path = [
   { x: T_CENTER * 6.25, y: GAME_AREA_HEIGHT -43.75 } // End 
 ];
 
-const svgPathString = path
-  .map(p => `${p.x},${p.y}`)
-  .join(' ');
+// --- MODIFIED: Placement Slots matching your red dots image ---
+const placementSlots = [
+    // --- Top Row ---
+    { id: 'r0c0', x: T_CENTER * 1.25, y: T_CENTER * 1.25 },
+    { id: 'r0c2', x: T_CENTER * 3.75, y: T_CENTER * 1.25 },
+    { id: 'r0c4', x: T_CENTER * 6.1, y: T_CENTER * 1.25 },
+    { id: 'r0c6', x: T_CENTER * 8.5, y: T_CENTER * 1.25 },
+    { id: 'r0c8', x: T_CENTER * 11, y: T_CENTER * 1.25 },
+    { id: 'r0c10', x: T_CENTER * 13.5, y: T_CENTER * 1.25 },
+    { id: 'r0c12', x: T_CENTER * 16, y: T_CENTER * 1.25 },
+    { id: 'r0c8', x: T_CENTER * 18.5, y: T_CENTER * 1.25 },
+
+    // --- Left Column ---
+    { id: 'r2c0', x: T_CENTER * 1.25, y: T_CENTER * 3.75 },
+    { id: 'r4c0', x: T_CENTER * 1.25, y: T_CENTER * 6.25 },
+
+    // --- Inner Area (Upper) ---
+    { id: 'r2c3', x: T_CENTER * 6.75, y: T_CENTER * 6.75 },
+    { id: 'r2c5', x: T_CENTER * 11.4, y: T_CENTER * 6.75 },
+    { id: 'r2c7', x: T_CENTER * 13.5, y: T_CENTER * 6.75 },
+
+    // --- Inner Area (Lower) ---
+    { id: 'r4c3', x: T_CENTER * 6.75, y: T_CENTER * 9 },
+
+    // --- Bottom Area ---
+    { id: 'r6c2', x: T_CENTER * 5.5, y: T_CENTER * 14 },
+    { id: 'r6c4', x: T_CENTER * 8, y: T_CENTER * 14 },
+    { id: 'r6c6', x: T_CENTER * 10.5, y: T_CENTER * 14 },
+    { id: 'r6c8', x: T_CENTER * 13, y: T_CENTER * 14 },
+    { id: 'r6c10', x: T_CENTER * 5.5, y: T_CENTER * 11.5 },
+    { id: 'r6c12', x: T_CENTER * 8, y: T_CENTER * 11.5 },
+    { id: 'r6c14', x: T_CENTER * 10.5, y: T_CENTER * 11.5 },
+    { id: 'r6c16', x: T_CENTER * 13, y: T_CENTER * 11.5 },
+
+    // --- Right Column ---
+    { id: 'r2c9', x: T_CENTER * 18.5, y: T_CENTER * 3.75},
+    { id: 'r4c9', x: T_CENTER * 18.5, y: T_CENTER * 6.25 },
+    { id: 'r6c9', x: T_CENTER * 18.5, y: T_CENTER * 8.95 },
+    { id: 'r8c9', x: T_CENTER * 18.5, y: T_CENTER * 11.55 },
+    { id: 'r8c11', x: T_CENTER * 18.5, y: T_CENTER * 14.25 },
+    { id: 'r8c13', x: T_CENTER * 18.5, y: T_CENTER * 17.25 },
+];
 
 
 const TOWER_CONFIG = {
@@ -52,9 +89,9 @@ const TOWER_CONFIG = {
     range: 100, // pixels
     damage: 50,
     fireRate: 1000, // ms
-    size: 60,
+    size: 50,
     icon: (color) => <Wind size={24} color={color} />, // For the UI button
-    sprite: gameAssets.tower, // <-- ADDED: For the in-game tower
+    sprite: gameAssets.tower, 
   },
 };
 
@@ -65,7 +102,7 @@ const ENEMY_CONFIG = {
     money: 5,
     size: 40,
     icon: (color) => <Bug size={18} color={color} />, // Fallback
-    sprite: gameAssets.enemy, // <-- ADDED: For the in-game enemy
+    sprite: gameAssets.enemy, 
   },
 };
 
@@ -90,12 +127,12 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
   const [projectiles, setProjectiles] = useState([]);
   
   const [placingTowerType, setPlacingTowerType] = useState(null);
-  const [placementPos, setPlacementPos] = useState(null); // NEW: Tracks finger/mouse
+  const [placementPos, setPlacementPos] = useState(null); 
   const [waveInProgress, setWaveInProgress] = useState(false);
   
   const spawnQueueRef = useRef([]);
   const spawnTimerRef = useRef(0);
-  const gameAreaRef = useRef(null); // NEW: Ref for the game area
+  const gameAreaRef = useRef(null); 
 
   // ... (startGame, resetGame, finishGame, handleGameOver are unchanged) ...
   const startGame = () => {
@@ -107,7 +144,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     setEnemies([]);
     setProjectiles([]);
     setPlacingTowerType(null);
-    setPlacementPos(null); // NEW
+    setPlacementPos(null); 
     setWaveInProgress(false);
     spawnQueueRef.current = [];
     spawnTimerRef.current = 0;
@@ -136,7 +173,6 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     }
   };
 
-  // ... (startWave and gameLoop are unchanged) ...
   const startWave = () => {
     if (waveInProgress || gameState !== 'playing') return;
     
@@ -153,31 +189,25 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     spawnQueueRef.current = newQueue;
     spawnTimerRef.current = 1000;
   };
-// --- MODIFIED: The entire gameLoop is refactored ---
+  
+  // --- gameLoop (Unchanged) ---
   const gameLoop = useCallback(() => {
-    // We check gameState here to prevent loops from running after game over
     if (gameState !== 'playing') return;
 
-    // --- 0. Create temporary holders for new state ---
-    // These will collect all changes to apply at the end.
     let newProjectiles = [];
     let newMoney = money;
     let newScore = score;
     let newHealth = health;
     let enemiesToSpawn = [];
     
-    // --- 1. Update Towers (Fire Projectiles) ---
-    // Read the *current* towers state
+    // 1. Update Towers
     const updatedTowers = towers.map(tower => {
       let newCooldown = tower.fireCooldown - GAME_TICK_MS;
-      // Read the *current* enemies state
       let target = enemies.find(e => e.id === tower.targetId); 
 
-      // Find new target if current one is dead or out of range
       if (!target || getDistance(tower, target) > tower.range) {
         target = null;
         let closestDist = tower.range;
-        // Read the *current* enemies state
         for (const enemy of enemies) { 
           const dist = getDistance(tower, enemy);
           if (dist <= closestDist) {
@@ -187,10 +217,8 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
         }
       }
       
-      // Fire if target found and cooldown ready
       if (target && newCooldown <= 0) {
-        newCooldown = tower.fireRate; // Reset cooldown
-        // Push to temporary array instead of calling setProjectiles
+        newCooldown = tower.fireRate;
         newProjectiles.push({
           id: `proj_${entityId++}`,
           x: tower.x,
@@ -205,27 +233,23 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
       return { ...tower, fireCooldown: newCooldown, targetId: target?.id };
     });
 
-    // --- 2. Update Projectiles (Move & Hit) ---
-    // Copy *current* enemies to track hits this tick
+    // 2. Update Projectiles
     let enemiesAfterHits = [...enemies]; 
     const remainingProjectiles = [];
 
-    // Read *current* projectiles state
     for (const p of projectiles) { 
       const target = enemiesAfterHits.find(e => e.id === p.targetId);
-      if (!target) continue; // Target is dead, projectile fades
+      if (!target) continue; 
 
       const dx = target.x - p.x;
       const dy = target.y - p.y;
       const dist = Math.hypot(dx, dy);
 
       if (dist < p.speed) {
-        // Hit target
         enemiesAfterHits = enemiesAfterHits.map(e => 
           e.id === p.targetId ? { ...e, health: e.health - p.damage } : e
         );
       } else {
-        // Move towards target
         remainingProjectiles.push({
           ...p,
           x: p.x + (dx / dist) * p.speed,
@@ -234,23 +258,20 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
       }
     }
 
-    // --- 3. Update Enemies (Move & Check State) ---
+    // 3. Update Enemies
     const remainingEnemies = [];
-    for (const e of enemiesAfterHits) { // Use the array from step 2
-      // A. Check for death
+    for (const e of enemiesAfterHits) { 
       if (e.health <= 0) {
         newMoney += e.money;
         newScore += 10;
         continue;
       }
       
-      // B. Check for reaching end
       if (e.waypointIndex >= path.length) {
         newHealth -= 1;
         continue;
       }
 
-      // C. Move along path
       const target = path[e.waypointIndex];
       const dx = target.x - e.x;
       const dy = target.y - e.y;
@@ -267,7 +288,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
       }
     }
 
-    // --- 4. Spawn Enemies ---
+    // 4. Spawn Enemies
     if (waveInProgress && spawnQueueRef.current.length > 0) {
       spawnTimerRef.current -= GAME_TICK_MS;
       if (spawnTimerRef.current <= 0) {
@@ -285,8 +306,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
       }
     }
     
-    // --- 5. Apply All State Updates Once ---
-    // This is the safest way to update state that depends on other state.
+    // 5. Apply Updates
     setTowers(updatedTowers);
     setEnemies([...remainingEnemies, ...enemiesToSpawn]);
     setProjectiles([...remainingProjectiles, ...newProjectiles]);
@@ -294,7 +314,6 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     setMoney(newMoney);
     setScore(newScore);
 
-    // --- 6. Check for Game/Wave End ---
     if (newHealth <= 0) {
       handleGameOver(false);
       return;
@@ -309,9 +328,6 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     }
     
   }, [
-    // --- THIS IS THE MOST IMPORTANT PART OF THE FIX ---
-    // By adding these, the gameLoop function rebuilds itself
-    // whenever these values change, so it's no longer "stale".
     gameState, 
     enemies, 
     towers, 
@@ -321,85 +337,105 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     score, 
     wave, 
     waveInProgress
-  ]); // <-- End of useCallback dependency array
+  ]);
 
-  // Main Game Loop Timer
   useEffect(() => {
     if (gameState !== 'playing') return;
-
     const loop = setInterval(gameLoop, GAME_TICK_MS);
     return () => clearInterval(loop);
-  }, [gameState, gameLoop]); // This hook runs the loop
+  }, [gameState, gameLoop]);
 
 
-  // --- MODIFIED: Click/Touch Handlers ---
+  // --- Click/Touch Handlers ---
 
   const handleSelectTower = (type) => {
     const config = TOWER_CONFIG[type];
     if (money >= config.cost) {
       setPlacingTowerType(type);
-      setPlacementPos(null); // Clear old position
+      setPlacementPos(null); 
     } else {
       console.log("Not enough money!");
     }
   };
 
-  // NEW: Function to update the touch/mouse position
-  // This is the same logic from your BlockTheHazeGame
+  // MODIFIED: Update placement pos now snaps to nearest valid slot
   const updatePlacementPos = (event) => {
     if (!gameAreaRef.current) return;
-
     const { pageX, pageY } = event.nativeEvent;
 
     gameAreaRef.current.measure((fx, fy, width, height, px, py) => {
-      if (width === 0 && height === 0) return; // measure() can return 0s
+      if (width === 0 && height === 0) return; 
       
       const x = pageX - px;
       const y = pageY - py;
+      
+      // Find the closest valid slot
+      let closestSlot = null;
+      let minDistance = Infinity;
+      
+      // How close your finger needs to be to "snap" to a slot (e.g., 30 pixels)
+      const SNAP_RADIUS = 30; 
 
-      // Clamp position inside game area
-      const clampedX = Math.max(0, Math.min(GAME_AREA_WIDTH, x));
-      const clampedY = Math.max(0, Math.min(GAME_AREA_HEIGHT, y));
+      placementSlots.forEach(slot => {
+          const dist = Math.hypot(x - slot.x, y - slot.y);
+          if (dist < minDistance && dist < SNAP_RADIUS) {
+              minDistance = dist;
+              closestSlot = slot;
+          }
+      });
 
-      setPlacementPos({ x: clampedX, y: clampedY });
+      if (closestSlot) {
+          setPlacementPos({ x: closestSlot.x, y: closestSlot.y });
+      } else {
+          // If too far from any slot, don't show preview (or show at finger pos but indicate invalid)
+          setPlacementPos(null);
+      }
     });
   };
 
-  // MODIFIED: This is now called on touch *release*
+  // MODIFIED: Place tower logic
   const handlePlaceTower = () => {
-    // Only place if we are in placement mode and have a valid position
+    // Only place if we have a valid snapped position
     if (!placingTowerType || !placementPos) {
-        // If user just taps to de-select, clear placement
         if (placingTowerType) {
+            // If user lifts finger without snapping to a slot, cancel placement
             setPlacingTowerType(null);
             setPlacementPos(null);
         }
         return;
     };
 
+    // Check if a tower is already on this spot
+    const isOccupied = towers.some(t => 
+        Math.abs(t.x - placementPos.x) < 5 && Math.abs(t.y - placementPos.y) < 5
+    );
+
+    if (isOccupied) {
+        console.log("Slot occupied!");
+        return;
+    }
+
     const config = TOWER_CONFIG[placingTowerType];
-    
-    // TODO: Add grid snapping and check for valid placement (not on path)
     
     setTowers(prev => [
       ...prev,
       {
         id: `tower_${entityId++}`,
         ...config,
-        x: placementPos.x, // Use state position
-        y: placementPos.y, // Use state position
+        x: placementPos.x, 
+        y: placementPos.y, 
         fireCooldown: 0,
         targetId: null,
       },
     ]);
     setMoney(m => m - config.cost);
     setPlacingTowerType(null);
-    setPlacementPos(null); // Clear preview
+    setPlacementPos(null); 
   };
 
   // --- 3. Render Functions ---
 
-  // RENDER: Ready Screen (Unchanged)
+  // RENDER: Ready Screen
   if (gameState === 'ready') {
     return (
       <View style={appStyles.gameCard}>
@@ -412,7 +448,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
           <View style={appStyles.leakGameHowTo}>
             <Text style={appStyles.leakGameHowToTitle}>How to Play:</Text>
             <Text style={appStyles.leakGameHowToText}>• Buy A/C Towers to place on the map.</Text>
-            <Text style={appStyles.leakGameHowToText}>• Towers automatically attack viruses.</Text>
+            <Text style={appStyles.leakGameHowToText}>• Drag towers to the valid slots (marked spots).</Text>
             <Text style={appStyles.leakGameHowToText}>• Stop viruses from reaching the end!</Text>
             <Text style={appStyles.leakGameHowToText}>• Survive {MAX_WAVES} waves to win.</Text>
           </View>
@@ -426,7 +462,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     );
   }
 
-  // RENDER: Game Over / Win Screen (Unchanged)
+  // RENDER: Game Over / Win Screen
   if (gameState === 'gameover' || gameState === 'gamewin') {
     const isWin = gameState === 'gamewin';
     return (
@@ -457,9 +493,8 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
   // RENDER: Main "Playing" Screen
   return (
     <View style={appStyles.gameCard}>
-      {/* Stats Header (Unchanged) */}
+      {/* Stats Header */}
       <View style={appStyles.leakGameHeader}>
-        {/* ... (Health, Money, Wave items) ... */}
         <View style={appStyles.leakGameHeaderItem}>
           <Text style={appStyles.leakGameHeaderLabel}>Health</Text>
           <Text style={[appStyles.leakGameHeaderValue, { color: '#28a745' }]}>
@@ -480,7 +515,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
         </View>
       </View>
 
-      {/* MODIFIED: Wrapped in a View, which now holds the ref and responders */}
+      {/* Game Area */}
       <View
         ref={gameAreaRef}
         style={localStyles.gameArea}
@@ -489,22 +524,24 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
         onResponderMove={updatePlacementPos}
         onResponderRelease={handlePlaceTower}
       >
-        {/* Child 1: The Background (MODIFIED to use Image) */}
+        {/* Child 1: Background */}
         <Image
           source={gameAssets.map}
           style={[StyleSheet.absoluteFill, { width: '100%', height: '100%' }]}
-          resizeMode="stretch" // resizeMode on a plain Image is more reliable
+          resizeMode="stretch" 
         />
         
-        {/* Child 2: The SVG Path Overlay
-        <Svg height={GAME_AREA_HEIGHT} width={GAME_AREA_WIDTH} style={{ position: 'absolute' }}>
-          <Polyline
-            points={svgPathString}
-            fill="none"
-            stroke="rgba(255, 255, 255, 0.4)" // Semi-transparent white
-            strokeWidth="3"
-          />
-        </Svg> */}
+        {/* Child 2: Placement Slot Indicators (Optional: Shows where you can build) */}
+        {/* Only show these when dragging a tower to guide the player */}
+        {placingTowerType && placementSlots.map(slot => (
+            <View
+                key={slot.id}
+                style={[
+                    localStyles.placementSlot,
+                    { left: slot.x - 10, top: slot.y - 10 } // Center the 20x20 dot
+                ]}
+            />
+        ))}
 
         {/* Child 3: Towers */}
         {towers.map(tower => (
@@ -515,7 +552,6 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
               { left: tower.x - tower.size / 2, top: tower.y - tower.size / 2, width: tower.size, height: tower.size },
             ]}
           >
-            {/* MODIFIED: Use the Image component */}
             <Image source={tower.sprite} style={localStyles.spriteImage} />
           </View>
         ))}
@@ -529,7 +565,6 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
               { left: enemy.x - enemy.size / 2, top: enemy.y - enemy.size / 2, width: enemy.size, height: enemy.size },
             ]}
           >
-            {/* MODIFIED: Use the Image component */}
             <Image source={enemy.sprite} style={localStyles.spriteImage} />
             <View style={localStyles.healthBarOuter}>
               <View style={[localStyles.healthBarInner, { width: `${(enemy.health / enemy.maxHealth) * 100}%` }]} />
@@ -574,9 +609,8 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
         )}
       </View>
 
-      {/* UI Controls (Unchanged) */}
+      {/* UI Controls */}
       <View style={localStyles.controlsContainer}>
-        {/* ... (A/C Tower Button) ... */}
         <TouchableOpacity
           style={localStyles.controlButton}
           onPress={() => handleSelectTower('acTower')}
@@ -588,7 +622,6 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
           {placingTowerType === 'acTower' && <View style={localStyles.selectedIndicator} />}
         </TouchableOpacity>
         
-        {/* ... (Start Wave Button) ... */}
         <TouchableOpacity
           style={[appStyles.startButton, { flex: 1, marginLeft: 10 }]}
           onPress={startWave}
@@ -609,22 +642,27 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 const localStyles = StyleSheet.create({
   gameArea: {
     height: GAME_AREA_HEIGHT,
-    width: GAME_AREA_WIDTH, // MODIFIED: Fixed width to match height
-    backgroundColor: 'black', // MODIFIED: Match image background
+    width: GAME_AREA_WIDTH, 
+    backgroundColor: 'black',
     borderRadius: 12,
     position: 'relative',
     overflow: 'hidden',
     marginTop: 10,
     borderWidth: 2,
     borderColor: '#374151',
-    alignSelf: 'center', // NEW: Center the square game area
+    alignSelf: 'center', 
   },
-  pathSegment: {
+  // NEW: Style for valid placement slots
+  placementSlot: {
     position: 'absolute',
-    backgroundColor: 'rgba(250, 252, 254, 0.5)', // Semi-transparent gray
-    opacity: 0.5, // You can adjust this value (0.0 to 1.0)
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(59, 130, 246, 0.5)', // Semi-transparent blue
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.8)',
+    zIndex: 5, // Ensure it's above background but below towers
   },
-
   tower: {
     position: 'absolute',
     borderRadius: 5,
@@ -633,18 +671,15 @@ const localStyles = StyleSheet.create({
   },
   enemy: {
     position: 'absolute',
-    // backgroundColor: '#EF4444', // <-- REMOVED
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // --- ADD THIS NEW STYLE ---
   spriteImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'contain',
   },
-  
   healthBarOuter: {
     position: 'absolute',
     top: -6,
@@ -673,10 +708,8 @@ const localStyles = StyleSheet.create({
     borderRadius: 1000, // Large number for circle
     alignItems: 'center',
     justifyContent: 'center',
-    // Removed static positioning
   },
   towerPreviewIcon: {
-    // NEW: Style for the icon in the center of the range preview
     alignItems: 'center',
     justifyContent: 'center',
     opacity: 0.7,
