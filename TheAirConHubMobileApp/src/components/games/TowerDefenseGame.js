@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 // MODIFIED: Cleaned up imports
 import { 
-  View, 
+  View,
   Text, 
   TouchableOpacity, 
   StyleSheet, 
@@ -9,15 +9,19 @@ import {
   ImageBackground,
   Image
 } from 'react-native';
-import { Wind, Bug, ShieldAlert, Target, Coins, Heart, Waves, CheckCircle, XCircle } from 'lucide-react-native';
+import { Wind, Bug, ShieldAlert, Target, Coins, Heart, Waves, CheckCircle, XCircle, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import Svg, { Polyline } from 'react-native-svg';
 import { styles as appStyles } from '../../styles/AppStyles';
 
-const gameAssets = {
-  map: require('../../../assets/towerDefense/hvac.jpg'), 
-  tower: require('../../../assets/towerDefense/tower_cassette.gif'),
-  enemy: require('../../../assets/towerDefense/enemy_heat.gif'),
-};
+//Import Game Configs
+import { GAME_MAP, TOWER_CONFIG, ENEMY_CONFIG } from './TowerDefenseConfig';
+
+// region Remove Game Assets
+// const gameAssets = {
+//   map: require('../../../assets/towerDefense/hvac.jpg'), 
+//   tower: require('../../../assets/towerDefense/tower_cassette.gif'),
+//   enemy: require('../../../assets/towerDefense/enemy_heat.gif'),
+// };
 
 
 const { width } = Dimensions.get('window');
@@ -49,7 +53,7 @@ const placementSlots = [
     { id: 'r0c8', x: T_CENTER * 11, y: T_CENTER * 1.25 },
     { id: 'r0c10', x: T_CENTER * 13.5, y: T_CENTER * 1.25 },
     { id: 'r0c12', x: T_CENTER * 16, y: T_CENTER * 1.25 },
-    { id: 'r0c8', x: T_CENTER * 18.5, y: T_CENTER * 1.25 },
+    { id: 'r0c14', x: T_CENTER * 18.5, y: T_CENTER * 1.25 },
 
     // --- Left Column ---
     { id: 'r2c0', x: T_CENTER * 1.25, y: T_CENTER * 3.75 },
@@ -82,33 +86,36 @@ const placementSlots = [
     { id: 'r8c13', x: T_CENTER * 18.5, y: T_CENTER * 17.25 },
 ];
 
+// region Remove Tower and Enemy Configs
+// const TOWER_CONFIG = {
+//   acTower: {
+//     cost: 100,
+//     range: 100, // pixels
+//     damage: 50,
+//     fireRate: 1000, // ms
+//     size: 50,
+//     icon: (color) => <Wind size={24} color={color} />, // For the UI button
+//     sprite: gameAssets.tower, 
+//   },
+// };
 
-const TOWER_CONFIG = {
-  acTower: {
-    cost: 100,
-    range: 100, // pixels
-    damage: 50,
-    fireRate: 1000, // ms
-    size: 50,
-    icon: (color) => <Wind size={24} color={color} />, // For the UI button
-    sprite: gameAssets.tower, 
-  },
-};
-
-const ENEMY_CONFIG = {
-  virus: {
-    health: 50,
-    speed: 1.5, // pixels per game tick
-    money: 5,
-    size: 40,
-    icon: (color) => <Bug size={18} color={color} />, // Fallback
-    sprite: gameAssets.enemy, 
-  },
-};
+// const ENEMY_CONFIG = {
+//   virus: {
+//     health: 50,
+//     speed: 1.5, // pixels per game tick
+//     money: 5,
+//     size: 40,
+//     icon: (color) => <Bug size={18} color={color} />, // Fallback
+//     sprite: gameAssets.enemy, 
+//   },
+// };
 
 const MAX_WAVES = 5;
 const GAME_TICK_MS = 50; 
 let entityId = 0; 
+
+const TOWER_KEYS = Object.keys(TOWER_CONFIG);
+const MAX_TOWER_INDEX = TOWER_KEYS.length - 1;
 
 const getDistance = (p1, p2) => {
   return Math.hypot(p1.x - p2.x, p1.y - p2.y);
@@ -123,6 +130,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
   const [wave, setWave] = useState(0);
   
   const [towers, setTowers] = useState([]);
+  const [selectedTowerIndex, setSelectedTowerIndex] = useState(0);
   const [enemies, setEnemies] = useState([]);
   const [projectiles, setProjectiles] = useState([]);
   
@@ -151,6 +159,20 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     setGameState('playing');
   };
 
+  const handlePrevTower = () => {
+    // Fix: This line was missing its closing parenthesis and curly brace
+    setSelectedTowerIndex(prevIndex => 
+      prevIndex === 0 ? MAX_TOWER_INDEX : prevIndex - 1 
+    ); // <-- ADDED closing parenthesis and semicolon
+  }; // <-- ADDED closing curly brace
+
+  const handleNextTower = () => {
+    setSelectedTowerIndex(prevIndex => 
+      // ERROR HERE: Change '1s' to '1'
+      prevIndex === MAX_TOWER_INDEX ? 0 : prevIndex + 1 // CORRECTED
+    );
+  };
+  
   const resetGame = () => {
     startGame();
   };
@@ -181,10 +203,10 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     setWave(newWave);
     
     const numEnemies = newWave * 5;
-    const enemyHealth = ENEMY_CONFIG.virus.health + newWave * 10;
+    const enemyHealth = ENEMY_CONFIG.virusenemy.health + newWave * 10;
     const newQueue = [];
     for (let i = 0; i < numEnemies; i++) {
-      newQueue.push({ type: 'virus', health: enemyHealth });
+      newQueue.push({ type: 'virusenemy', health: enemyHealth });
     }
     spawnQueueRef.current = newQueue;
     spawnTimerRef.current = 1000;
@@ -526,7 +548,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
       >
         {/* Child 1: Background */}
         <Image
-          source={gameAssets.map}
+          source={GAME_MAP}
           style={[StyleSheet.absoluteFill, { width: '100%', height: '100%' }]}
           resizeMode="stretch" 
         />
@@ -611,19 +633,54 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 
       {/* UI Controls */}
       <View style={localStyles.controlsContainer}>
+        {/* New container for all tower options */}
+        <View style={[localStyles.singleTowerSelectionContainer, { flex: 2, marginRight: 10 }]}>
+          <TouchableOpacity 
+            style={localStyles.arrowButton} 
+            onPress={handlePrevTower}
+          >
+            <ChevronLeft size={28} color="#3B82F6" />
+          </TouchableOpacity>
+          
+          {/* Current Tower Option */}
+          {TOWER_KEYS.length > 0 && (() => {
+            const currentTowerKey = TOWER_KEYS[selectedTowerIndex];
+            const config = TOWER_CONFIG[currentTowerKey];
+            
+            return (
+              <TouchableOpacity
+                key={currentTowerKey}
+                style={[
+                  localStyles.controlButton,
+                  // Takes up the available space between arrows
+                  { flex: 1, marginHorizontal: 5 } 
+                ]}
+                onPress={() => handleSelectTower(currentTowerKey)} 
+              >
+                {/* Dynamically render the icon and text */}
+                {config.icon('#3B82F6')}
+                <Text style={localStyles.controlButtonText} numberOfLines={1}>
+                  {/* Format the key for display (e.g., 'casettetower' -> 'Cassette') */}
+                  {currentTowerKey.replace('tower', '').replace('mounted', ' Mounted').trim()} (${config.cost})
+                </Text>
+                {placingTowerType === currentTowerKey && <View style={localStyles.selectedIndicator} />}
+              </TouchableOpacity>
+            );
+          })()}
+
+          {/* Right Arrow Button */}
+          <TouchableOpacity 
+            style={localStyles.arrowButton} 
+            onPress={handleNextTower}
+          >
+            <ChevronRight size={28} color="#3B82F6" />
+          </TouchableOpacity>
+
+        </View>
+
+        {/* Start Wave Button (flex: 1) */}
         <TouchableOpacity
-          style={localStyles.controlButton}
-          onPress={() => handleSelectTower('acTower')}
-        >
-          {TOWER_CONFIG.acTower.icon('#3B82F6')}
-          <Text style={localStyles.controlButtonText}>
-            A/C Tower (${TOWER_CONFIG.acTower.cost})
-          </Text>
-          {placingTowerType === 'acTower' && <View style={localStyles.selectedIndicator} />}
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[appStyles.startButton, { flex: 1, marginLeft: 10 }]}
+          style={[appStyles.startButton, { flex: 1 }]}
           onPress={startWave}
           disabled={waveInProgress}
         >
@@ -637,7 +694,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 };
 
 
-// --- 4. Local Styles ---
+//region --- 4. Local Styles ---
 
 const localStyles = StyleSheet.create({
   gameArea: {
@@ -719,14 +776,27 @@ const localStyles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 15,
   },
-  controlButton: {
-    backgroundColor: '#E5E7EB',
-    padding: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
+  singleTowerSelectionContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  paddingHorizontal: 5,
+  backgroundColor: '#F3F4F6', // Light background to frame the selection
+  borderRadius: 8,
+},
+arrowButton: {
+  padding: 5,
+},
+controlButton: {
+  // Reset button styles for the new layout
+  backgroundColor: 'transparent',
+  padding: 10,
+  borderRadius: 8,
+  alignItems: 'center',
+  borderWidth: 2,
+  borderColor: 'transparent',
+  // REMOVE fixed width: 'width: 100,'
+},
   controlButtonText: {
     color: '#1F2937',
     fontWeight: '600',
