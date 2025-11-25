@@ -28,13 +28,6 @@ import { styles as appStyles } from "../../styles/AppStyles";
 //Import Game Configs
 import { GAME_MAP, TOWER_CONFIG, ENEMY_CONFIG } from "./TowerDefenseConfig";
 
-// region Remove Game Assets
-// const gameAssets = {
-//   map: require('../../../assets/towerDefense/hvac.jpg'),
-//   tower: require('../../../assets/towerDefense/tower_cassette.gif'),
-//   enemy: require('../../../assets/towerDefense/enemy_heat.gif'),
-// };
-
 const { width } = Dimensions.get("window");
 const GAME_AREA_HEIGHT = 350;
 const GAME_AREA_WIDTH = 350; // Set to height to make it square
@@ -54,7 +47,7 @@ const path = [
   { x: T_CENTER * 6.25, y: GAME_AREA_HEIGHT - 43.75 }, // End
 ];
 
-// --- MODIFIED: Placement Slots matching your red dots image ---
+// region Tower PLacement Slots
 const placementSlots = [
   // --- Top Row ---
   { id: "r0c0", x: T_CENTER * 1.25, y: T_CENTER * 1.25 },
@@ -97,32 +90,9 @@ const placementSlots = [
   { id: "r8c13", x: T_CENTER * 18.5, y: T_CENTER * 17.25 },
 ];
 
-// region Remove Tower and Enemy Configs
-// const TOWER_CONFIG = {
-//   acTower: {
-//     cost: 100,
-//     range: 100, // pixels
-//     damage: 50,
-//     fireRate: 1000, // ms
-//     size: 50,
-//     icon: (color) => <Wind size={24} color={color} />, // For the UI button
-//     sprite: gameAssets.tower,
-//   },
-// };
-
-// const ENEMY_CONFIG = {
-//   virus: {
-//     health: 50,
-//     speed: 1.5, // pixels per game tick
-//     money: 5,
-//     size: 40,
-//     icon: (color) => <Bug size={18} color={color} />, // Fallback
-//     sprite: gameAssets.enemy,
-//   },
-// };
-
 const MAX_WAVES = 5;
 const GAME_TICK_MS = 50;
+let entityId = 0;
 
 const TOWER_KEYS = Object.keys(TOWER_CONFIG);
 const MAX_TOWER_INDEX = TOWER_KEYS.length - 1;
@@ -142,6 +112,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
   const [selectedTowerIndex, setSelectedTowerIndex] = useState(0);
   const [enemies, setEnemies] = useState([]);
   const [projectiles, setProjectiles] = useState([]);
+  const [spikes, setSpikes] = useState([]);
 
   const [placingTowerType, setPlacingTowerType] = useState(null);
   const [placementPos, setPlacementPos] = useState(null);
@@ -150,9 +121,8 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
   const spawnQueueRef = useRef([]);
   const spawnTimerRef = useRef(0);
   const gameAreaRef = useRef(null);
-  const entityIdRef = useRef(0);
 
-  // ... (startGame, resetGame, finishGame, handleGameOver are unchanged) ...
+  // region --- Game Logic
   const startGame = () => {
     setHealth(100);
     setMoney(300);
@@ -166,7 +136,6 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     setWaveInProgress(false);
     spawnQueueRef.current = [];
     spawnTimerRef.current = 0;
-    entityIdRef.current = 0;
     setGameState("playing");
   };
 
@@ -214,86 +183,29 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     const newWave = wave + 1;
     setWave(newWave);
 
+    const numEnemies = newWave * 5;
+    const enemyHealth = ENEMY_CONFIG.virusenemy.health + newWave * 10;
     const newQueue = [];
-    const totalEnemies = newWave * 5;
-
-    const getScaledHealth = (enemyKey, currentWave) => {
-      const baseHealth = ENEMY_CONFIG[enemyKey].health;
-      let scaleFactor = 5;
-
-      if (enemyKey === "heatenemy") {
-        scaleFactor = 3; // Heat enemies are tanky, scale their health less
-      } else if (enemyKey === "dustenemy") {
-        scaleFactor = 10; // Dust enemies are weak, scale their health more
-      }
-      return baseHealth + currentWave * scaleFactor;
-    };
-
-    if (newWave === 1) {
-      // Wave 1: Only Virus enemies
-      const health = getScaledHealth("virusenemy", newWave);
-      for (let i = 0; i < totalEnemies; i++) {
-        newQueue.push({ type: "virusenemy", health: health });
-      }
-    } else if (newWave === 2) {
-      // Wave 2: Mix of Virus and Dust enemies
-      const virusCount = Math.ceil(totalEnemies * 0.7); // 70% Virus
-      const dustCount = totalEnemies - virusCount; // 30% Dust
-
-      const virusHealth = getScaledHealth("virusenemy", newWave);
-      const dustHealth = getScaledHealth("dustenemy", newWave);
-
-      for (let i = 0; i < virusCount; i++) {
-        newQueue.push({ type: "virusenemy", health: virusHealth });
-      }
-      for (let i = 0; i < dustCount; i++) {
-        newQueue.push({ type: "dustenemy", health: dustHealth });
-      }
-    } else {
-      // Wave 3 and beyond: Mix of all three types
-      const heatCount = Math.floor(totalEnemies * 0.15); // 15% Heat (Tanky)
-      const dustCount = Math.floor(totalEnemies * 0.25); // 25% Dust (Fast)
-      const virusCount = totalEnemies - heatCount - dustCount; // Remaining Virus (Standard)
-
-      const virusHealth = getScaledHealth("virusenemy", newWave);
-      const heatHealth = getScaledHealth("heatenemy", newWave);
-      const dustHealth = getScaledHealth("dustenemy", newWave);
-
-      for (let i = 0; i < virusCount; i++) {
-        newQueue.push({ type: "virusenemy", health: virusHealth });
-      }
-      for (let i = 0; i < heatCount; i++) {
-        newQueue.push({ type: "heatenemy", health: heatHealth });
-      }
-      for (let i = 0; i < dustCount; i++) {
-        newQueue.push({ type: "dustenemy", health: dustHealth });
-      }
-
-      // Shuffle the queue to ensure enemies are not released in large blocks
-      for (let i = newQueue.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [newQueue[i], newQueue[j]] = [newQueue[j], newQueue[i]];
-      }
+    for (let i = 0; i < numEnemies; i++) {
+      newQueue.push({ type: "virusenemy", health: enemyHealth });
     }
     spawnQueueRef.current = newQueue;
     spawnTimerRef.current = 1000;
   };
 
-  // --- gameLoop (Unchanged) ---
+  // region --- gameLoop ---
   const gameLoop = useCallback(() => {
     if (gameState !== "playing") return;
 
     let newProjectiles = [];
+    let pendingSpikes = [];
     let newMoney = money;
     let newScore = score;
     let newHealth = health;
     let enemiesToSpawn = [];
-    let enemiesToDamage = {};
 
     // 1. Update Towers
     const updatedTowers = towers.map((tower) => {
-      const towerConfig = TOWER_CONFIG[tower.type];
-
       let newCooldown = tower.fireCooldown - GAME_TICK_MS;
       let target = enemies.find((e) => e.id === tower.targetId);
 
@@ -311,100 +223,105 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 
       if (target && newCooldown <= 0) {
         newCooldown = tower.fireRate;
-        if (towerConfig.effect === "AoE") {
-          // AOE towers (like floortower) deal damage instantly to all enemies in range.
-          // No projectile is created. Damage is handled in the separate loop below.
-        } else {
-          // Standard ('single') and Splash ('splash') towers use a projectile.
+        if (tower.projectileSprite && !tower.aoeDamage) {
           newProjectiles.push({
-            id: `proj_${entityIdRef.current++}`,
+            id: `proj_${entityId++}`,
             x: tower.x,
             y: tower.y,
             damage: tower.damage,
             targetId: target.id,
             speed: 5,
-
-            // NEW: Attach the special effect properties to the projectile
-            effect: towerConfig.effect,
-            splashRadius: towerConfig.splashRadius || 0, // casettetower has this
-            splashDamage: towerConfig.splashDamage || 0, // casettetower has this
+            type: tower, // store full tower config
+            aoeRadius: tower.aoeRadius,
+            splashRadius: tower.splashRadius,
+            sprite: tower.projectileSprite,
           });
         }
-
-        // Always reset cooldown and target regardless of attack type
         return { ...tower, fireCooldown: newCooldown, targetId: target.id };
       }
 
       return { ...tower, fireCooldown: newCooldown, targetId: target?.id };
     });
 
-    // --- NEW SECTION: Handle AOE Damage immediately after the map ---
-    // This runs the AOE attack for towers that just fired (i.e., had their cooldown reset to full).
-    const aoTowers = updatedTowers.filter(
-      (t) =>
-        // FIX: Use 'AoE' (capital A) from config and correct 'fireRate' property
-        TOWER_CONFIG[t.type].effect === "AoE" &&
-        t.fireCooldown === TOWER_CONFIG[t.type].fireRate
-    );
+    // 2. Update Projectiles
+    let enemiesAfterHits = [...enemies];
 
-    if (aoTowers.length > 0) {
-      aoTowers.forEach((aoTower) => {
-        // Apply AOE damage to all enemies within the tower's range
-        enemies.forEach((enemy) => {
-          const distance = getDistance(aoTower, enemy);
-          if (distance <= aoTower.range) {
-            // FIX: Aggregate damage using the enemiesToDamage object
-            enemiesToDamage[enemy.id] =
-              (enemiesToDamage[enemy.id] || 0) + aoTower.damage;
-          }
+    for (const tower of updatedTowers) {
+      if (!tower.aoeDamage) continue;
+
+      // Initialize cooldown on tower if undefined
+      if (tower.aoeCooldown === undefined) {
+        tower.aoeCooldown = tower.aoeTickRate;
+      }
+
+      tower.aoeCooldown -= GAME_TICK_MS;
+
+      // Only trigger damage when timer hits zero
+      if (tower.aoeCooldown <= 0) {
+        tower.aoeCooldown = tower.aoeTickRate;
+
+        // FIND ALL ENEMIES INSIDE AOE
+        const enemiesHit = enemiesAfterHits.filter((e) => {
+          const dist = Math.hypot(e.x - tower.x, e.y - tower.y);
+          return dist <= tower.range;
         });
-      });
+
+        // CREATE ONE SPIKE PER ENEMY
+        const newSpikesArr = enemiesHit.map((e) => ({
+          id: `spike_${entityId++}`,
+          x: e.x,
+          y: e.y + e.size / 2 - 15, // spike appears UNDER enemy feet
+          sprite: tower.projectileSprite,
+          duration: 300, // ms until spike disappears
+        }));
+
+        pendingSpikes.push(...newSpikesArr);
+
+        // Apply AoE damage
+        enemiesAfterHits = enemiesAfterHits.map((e) =>
+          enemiesHit.includes(e)
+            ? { ...e, health: e.health - tower.aoeDamage }
+            : e
+        );
+      }
     }
 
-    // 2. Update Projectiles
-    let projectilesToKeep = [];
+    const updatedSpikes = spikes
+      .map((s) => ({ ...s, duration: s.duration - GAME_TICK_MS }))
+      .filter((s) => s.duration > 0);
+
+    setSpikes([...updatedSpikes, ...pendingSpikes]);
+
+    const remainingProjectiles = [];
 
     for (const p of projectiles) {
-      const target = enemies.find((e) => e.id === p.targetId);
-
-      if (!target) {
-        // Target is gone, keep the projectile moving forward, or just let it despawn
-        // For now, let it despawn to simplify the logic
-        continue;
-      }
+      const target = enemiesAfterHits.find((e) => e.id === p.targetId);
+      if (!target) continue;
 
       const dx = target.x - p.x;
       const dy = target.y - p.y;
       const dist = Math.hypot(dx, dy);
 
       if (dist < p.speed) {
-        // Projectile hit the target!
-        let hit = true;
-
-        // --- Handle Splash Damage ---
-        if (p.effect === "Splash" && p.splashRadius > 0) {
-          // Find enemies near the target
-          enemies.forEach((splashEnemy) => {
-            const distance = getDistance(target, splashEnemy);
-
-            if (distance <= p.splashRadius) {
-              // Primary target takes full damage, others take splash damage
-              const damage =
-                splashEnemy.id === target.id ? p.damage : p.splashDamage;
-              enemiesToDamage[splashEnemy.id] =
-                (enemiesToDamage[splashEnemy.id] || 0) + damage;
-            }
+        // If full AoE tower (floor tower)
+        if (p.splashRadius) {
+          const target = enemiesAfterHits.find((e) => e.id === p.targetId);
+          enemiesAfterHits = enemiesAfterHits.map((e) => {
+            const d = Math.hypot(e.x - target.x, e.y - target.y);
+            return d <= p.splashRadius
+              ? { ...e, health: e.health - p.damage }
+              : e;
           });
-        } else {
-          // Standard single-target damage
-          enemiesToDamage[target.id] =
-            (enemiesToDamage[target.id] || 0) + p.damage;
         }
 
-        // Projectile disappears upon hitting its target/triggering its effect
+        // Default single-target (wall mount)
+        else {
+          enemiesAfterHits = enemiesAfterHits.map((e) =>
+            e.id === p.targetId ? { ...e, health: e.health - p.damage } : e
+          );
+        }
       } else {
-        // Projectile still moving
-        projectilesToKeep.push({
+        remainingProjectiles.push({
           ...p,
           x: p.x + (dx / dist) * p.speed,
           y: p.y + (dy / dist) * p.speed,
@@ -412,16 +329,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
       }
     }
 
-    // 3. Apply Damage
-    let enemiesAfterHits = enemies.map((e) => {
-      const damage = enemiesToDamage[e.id] || 0;
-      return {
-        ...e,
-        health: e.health - damage,
-      };
-    });
-
-    // 4. Update Enemies (Movement and cleanup)
+    // 3. Update Enemies
     const remainingEnemies = [];
     for (const e of enemiesAfterHits) {
       if (e.health <= 0) {
@@ -435,38 +343,35 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
         continue;
       }
 
-      // --- Enemy Movement Logic (WAS MISSING) ---
-      const targetPoint = path[e.waypointIndex];
-      const dx = targetPoint.x - e.x;
-      const dy = targetPoint.y - e.y;
+      const target = path[e.waypointIndex];
+      const dx = target.x - e.x;
+      const dy = target.y - e.y;
       const dist = Math.hypot(dx, dy);
 
-      if (dist <= e.speed) {
-        // Reached waypoint, move to the next one
+      if (dist < e.speed) {
         remainingEnemies.push({
           ...e,
-          x: targetPoint.x,
-          y: targetPoint.y,
+          x: target.x,
+          y: target.y,
           waypointIndex: e.waypointIndex + 1,
         });
       } else {
-        // Move towards waypoint
         remainingEnemies.push({
           ...e,
           x: e.x + (dx / dist) * e.speed,
           y: e.y + (dy / dist) * e.speed,
         });
       }
-      // --- END Enemy Movement Logic ---
     }
-    // 5. Spawn Enemies
+
+    // 4. Spawn Enemies
     if (waveInProgress && spawnQueueRef.current.length > 0) {
       spawnTimerRef.current -= GAME_TICK_MS;
       if (spawnTimerRef.current <= 0) {
         spawnTimerRef.current = 1000;
         const enemyData = spawnQueueRef.current.shift();
         enemiesToSpawn.push({
-          id: `enemy_${entityIdRef.current++}`,
+          id: `enemy_${entityId++}`,
           ...ENEMY_CONFIG[enemyData.type],
           x: path[0].x,
           y: path[0].y,
@@ -477,10 +382,10 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
       }
     }
 
-    // 6. Apply Updates
+    // 5. Apply Updates
     setTowers(updatedTowers);
     setEnemies([...remainingEnemies, ...enemiesToSpawn]);
-    setProjectiles(projectilesToKeep);
+    setProjectiles([...remainingProjectiles, ...newProjectiles]);
     setHealth(newHealth);
     setMoney(newMoney);
     setScore(newScore);
@@ -595,8 +500,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     setTowers((prev) => [
       ...prev,
       {
-        id: `tower_${entityIdRef.current++}`,
-        type: placingTowerType,
+        id: `tower_${entityId++}`,
         ...config,
         x: placementPos.x,
         y: placementPos.y,
@@ -790,13 +694,37 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 
         {/* Child 5: Projectiles */}
         {projectiles.map((p) => (
-          <View
+          <Image
             key={p.id}
-            style={[localStyles.projectile, { left: p.x - 3, top: p.y - 3 }]}
+            source={p.sprite}
+            style={{
+              position: "absolute",
+              width: 20,
+              height: 20,
+              left: p.x - 10,
+              top: p.y - 10,
+              resizeMode: "contain",
+            }}
           />
         ))}
 
-        {/* Child 6: Tower Placement Preview */}
+        {/* Child 6: Floor Tower Spike Effects */}
+        {spikes.map((s) => (
+          <Image
+            key={s.id}
+            source={s.sprite}
+            style={{
+              position: "absolute",
+              width: 40,
+              height: 40,
+              left: s.x - 20,
+              top: s.y - 20,
+              resizeMode: "contain",
+            }}
+          />
+        ))}
+
+        {/* Child 7: Tower Placement Preview */}
         {placingTowerType && placementPos && (
           <View
             style={[
