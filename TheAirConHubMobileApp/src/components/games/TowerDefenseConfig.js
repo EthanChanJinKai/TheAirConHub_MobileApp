@@ -65,7 +65,7 @@ export const TOWER_CONFIG = {
 export const ENEMY_CONFIG = {
   virusenemy: {
     health: 200,
-    speed: 2,
+    speed: 40,
     money: 5,
     size: 40,
     icon: (color) => <Bug size={18} color={color} />, // Fallback
@@ -73,7 +73,7 @@ export const ENEMY_CONFIG = {
   },
   heatenemy: {
     health: 350,
-    speed: 1.5,
+    speed: 30,
     money: 10,
     size: 50,
     icon: (color) => <Bug size={18} color={color} />, // Fallback
@@ -81,7 +81,7 @@ export const ENEMY_CONFIG = {
   },
   dustenemy: {
     health: 150,
-    speed: 3,
+    speed: 60,
     money: 3,
     size: 30,
     icon: (color) => <Bug size={18} color={color} />, // Fallback

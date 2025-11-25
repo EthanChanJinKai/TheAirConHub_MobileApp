@@ -91,7 +91,7 @@ const placementSlots = [
 ];
 
 const MAX_WAVES = 5;
-const GAME_TICK_MS = 50;
+const GAME_TICK_MS = 60;
 let entityId = 0;
 
 const TOWER_KEYS = Object.keys(TOWER_CONFIG);
@@ -121,6 +121,8 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
   const spawnQueueRef = useRef([]);
   const spawnTimerRef = useRef(0);
   const gameAreaRef = useRef(null);
+
+  const lastFrameTimeRef = useRef(Date.now());
 
   // region --- Game Logic
   const startGame = () => {
@@ -195,7 +197,20 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 
   // region --- gameLoop ---
   const gameLoop = useCallback(() => {
-    if (gameState !== "playing") return;
+    // 1. Check game state
+    if (gameState !== "playing") {
+        // Reset timer if paused so we don't jump
+        lastFrameTimeRef.current = Date.now();
+        return;
+    }
+
+    // 2. Calculate Delta Time (dt) in seconds
+    const now = Date.now();
+    const dt = (now - lastFrameTimeRef.current) / 1000;
+    lastFrameTimeRef.current = now;
+
+    // Safety cap: If lag spike > 0.1s, cap at 0.1s to prevent massive jumps
+    if (dt > 0.1) return;
 
     let newProjectiles = [];
     let pendingSpikes = [];
@@ -206,7 +221,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 
     // 1. Update Towers
     const updatedTowers = towers.map((tower) => {
-      let newCooldown = tower.fireCooldown - GAME_TICK_MS;
+      let newCooldown = tower.fireCooldown - (dt * 1000);
       let target = enemies.find((e) => e.id === tower.targetId);
 
       if (!target || getDistance(tower, target) > tower.range) {
@@ -230,7 +245,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
             y: tower.y,
             damage: tower.damage,
             targetId: target.id,
-            speed: 5,
+            speed: 300,
             type: tower, // store full tower config
             aoeRadius: tower.aoeRadius,
             splashRadius: tower.splashRadius,
@@ -254,7 +269,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
         tower.aoeCooldown = tower.aoeTickRate;
       }
 
-      tower.aoeCooldown -= GAME_TICK_MS;
+      tower.aoeCooldown -= (dt * 1000);
 
       // Only trigger damage when timer hits zero
       if (tower.aoeCooldown <= 0) {
@@ -287,7 +302,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     }
 
     const updatedSpikes = spikes
-      .map((s) => ({ ...s, duration: s.duration - GAME_TICK_MS }))
+      .map((s) => ({ ...s, duration: s.duration - (dt * 1000) }))
       .filter((s) => s.duration > 0);
 
     setSpikes([...updatedSpikes, ...pendingSpikes]);
@@ -302,7 +317,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
       const dy = target.y - p.y;
       const dist = Math.hypot(dx, dy);
 
-      if (dist < p.speed) {
+      if (dist < p.speed * dt) {
         // If full AoE tower (floor tower)
         if (p.splashRadius) {
           const target = enemiesAfterHits.find((e) => e.id === p.targetId);
@@ -323,8 +338,8 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
       } else {
         remainingProjectiles.push({
           ...p,
-          x: p.x + (dx / dist) * p.speed,
-          y: p.y + (dy / dist) * p.speed,
+          x: p.x + (dx / dist) * p.speed * dt,
+          y: p.y + (dy / dist) * p.speed * dt,
         });
       }
     }
@@ -348,7 +363,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
       const dy = target.y - e.y;
       const dist = Math.hypot(dx, dy);
 
-      if (dist < e.speed) {
+      if (dist < e.speed * dt) {
         remainingEnemies.push({
           ...e,
           x: target.x,
@@ -358,15 +373,17 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
       } else {
         remainingEnemies.push({
           ...e,
-          x: e.x + (dx / dist) * e.speed,
-          y: e.y + (dy / dist) * e.speed,
+          // OLD: x: e.x + (dx / dist) * e.speed,
+          // NEW:
+          x: e.x + (dx / dist) * e.speed * dt,
+          y: e.y + (dy / dist) * e.speed * dt,
         });
       }
     }
 
     // 4. Spawn Enemies
     if (waveInProgress && spawnQueueRef.current.length > 0) {
-      spawnTimerRef.current -= GAME_TICK_MS;
+      spawnTimerRef.current -= (dt * 1000);
       if (spawnTimerRef.current <= 0) {
         spawnTimerRef.current = 1000;
         const enemyData = spawnQueueRef.current.shift();
