@@ -7,7 +7,7 @@ const gameAssets = {
 
   //Tower Sprites
   wallmounted: require("../../../assets/towerDefense/tower_wallmounted.gif"),
-  //portable: require('../../../assets/towerDefense/tower_portable.gif'),
+  portable: require('../../../assets/towerDefense/tower_portable.gif'),
   casette: require("../../../assets/towerDefense/tower_cassette.gif"),
   floor: require("../../../assets/towerDefense/tower_floor.gif"),
 
@@ -15,6 +15,7 @@ const gameAssets = {
   projectile_wallmounted: require("../../../assets/towerDefense/normal_bullet.png"),
   projectile_casette: require("../../../assets/towerDefense/splash_bullet.png"),
   projectile_floor: require("../../../assets/towerDefense/ice_spike.gif"),
+  projectile_portable: require("../../../assets/towerDefense/explosion.gif"),
 
   //Enemy Sprites
   virus: require("../../../assets/towerDefense/enemy_virus.gif"),
@@ -34,6 +35,18 @@ export const TOWER_CONFIG = {
     icon: (color) => <Wind size={24} color={color} />,
     sprite: gameAssets.wallmounted,
     projectileSprite: gameAssets.projectile_wallmounted,
+  },
+
+  portabletower: {
+    cost: 300,        // Expensive
+    range: 180,       // Long range
+    damage: 150,      // High damage
+    fireRate: 4000,   // Very slow fire rate
+    size: 60,
+    splashRadius: 80, // Big Area of Effect
+    icon: (color) => <Wind size={24} color={color} />,
+    sprite: gameAssets.portable,
+    projectileSprite: gameAssets.projectile_portable,
   },
 
   casettetower: {

@@ -8,6 +8,7 @@ import {
   Dimensions,
   ImageBackground,
   Image,
+  Platform,
 } from "react-native";
 import {
   Wind,
@@ -91,7 +92,7 @@ const placementSlots = [
 ];
 
 const MAX_WAVES = 5;
-const GAME_TICK_MS = 60;
+const GAME_TICK_MS = Platform.OS === 'web' ? 30 : 60;
 let entityId = 0;
 
 const TOWER_KEYS = Object.keys(TOWER_CONFIG);
@@ -185,12 +186,34 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     const newWave = wave + 1;
     setWave(newWave);
 
+    // Calculate number of enemies based on wave
     const numEnemies = newWave * 5;
-    const enemyHealth = ENEMY_CONFIG.virusenemy.health + newWave * 10;
     const newQueue = [];
+
     for (let i = 0; i < numEnemies; i++) {
-      newQueue.push({ type: "virusenemy", health: enemyHealth });
+      let enemyType = "virusenemy"; // Default (Wave 1-2)
+
+      // Wave 3+: Introduce Heat enemies (mixed with Virus)
+      if (newWave >= 3) {
+        if (i % 2 === 0) { // Every other enemy is Heat
+           enemyType = "heatenemy";
+        }
+      }
+
+      // Wave 5+: Introduce Dust enemies (mixed with Heat & Virus)
+      if (newWave >= 5) {
+        if (i % 3 === 0) { // Every 3rd enemy is Dust
+           enemyType = "dustenemy";
+        }
+      }
+
+      // Get base health from config and scale it with wave number
+      const baseHealth = ENEMY_CONFIG[enemyType].health;
+      const scaledHealth = baseHealth + (newWave * 10);
+
+      newQueue.push({ type: enemyType, health: scaledHealth });
     }
+
     spawnQueueRef.current = newQueue;
     spawnTimerRef.current = 1000;
   };
