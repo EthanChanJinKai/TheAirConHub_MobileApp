@@ -27,48 +27,47 @@ import Svg, { Polyline } from "react-native-svg";
 import { styles as appStyles } from "../../styles/AppStyles";
 
 //Import Game Configs
-import { 
-  GAME_MAP, 
-  TOWER_CONFIG, 
+import {
+  GAME_MAP,
+  TOWER_CONFIG,
   ENEMY_CONFIG,
   GAME_SETTINGS,
-  WAVE_CONFIG
+  WAVE_CONFIG,
 } from "./TowerDefenseConfig";
-
 
 // --- SCREEN CONSTANTS ---
 const { width } = Dimensions.get("window");
-const GAME_AREA_WIDTH = 350; 
+const GAME_AREA_WIDTH = 350;
 const GAME_AREA_HEIGHT = 350;
-const TILE_SIZE = GAME_AREA_WIDTH / 10; 
+const TILE_SIZE = GAME_AREA_WIDTH / 10;
 const T_CENTER = TILE_SIZE / 2;
 
 // --- PATHS ---
 export const MAIN_PATH = [
-  { x: T_CENTER * 2.55, y: GAME_AREA_HEIGHT - 40 }, 
-  { x: T_CENTER * 2.55, y: T_CENTER * 17.2 }, 
-  { x: T_CENTER * 2.55, y: T_CENTER * 10 }, 
-  { x: T_CENTER * 3.7, y: T_CENTER * 8.5 }, 
-  { x: T_CENTER * 3.7, y: T_CENTER * 3.8 }, 
-  { x: T_CENTER * 16.2, y: T_CENTER * 3.8 }, 
+  { x: T_CENTER * 2.55, y: GAME_AREA_HEIGHT - 40 },
+  { x: T_CENTER * 2.55, y: T_CENTER * 17.2 },
+  { x: T_CENTER * 2.55, y: T_CENTER * 10 },
+  { x: T_CENTER * 3.7, y: T_CENTER * 8.5 },
+  { x: T_CENTER * 3.7, y: T_CENTER * 3.8 },
+  { x: T_CENTER * 16.2, y: T_CENTER * 3.8 },
   { x: T_CENTER * 16.2, y: T_CENTER * 17.5 },
-  { x: T_CENTER * 6.25, y: T_CENTER * 17.5 }, 
-  { x: T_CENTER * 6.25, y: T_CENTER * 17.5 }, 
-  { x: T_CENTER * 6.25, y: GAME_AREA_HEIGHT - 43.75 }, 
+  { x: T_CENTER * 6.25, y: T_CENTER * 17.5 },
+  { x: T_CENTER * 6.25, y: T_CENTER * 17.5 },
+  { x: T_CENTER * 6.25, y: GAME_AREA_HEIGHT - 43.75 },
 ];
 
 export const DUST_PATH = [
-  { x: T_CENTER * 2.55, y: GAME_AREA_HEIGHT - 40 }, 
-  { x: T_CENTER * 2.55, y: T_CENTER * 17.2 }, 
-  { x: T_CENTER * 2.55, y: T_CENTER * 10 }, 
-  { x: T_CENTER * 3.7, y: T_CENTER * 8.5 }, 
-  { x: T_CENTER * 3.7, y: T_CENTER * 3.8 }, 
-  { x: T_CENTER * 9.35, y: T_CENTER * 3.8 },  
-  { x: T_CENTER * 9.35, y: T_CENTER * 9.35 }, 
-  { x: T_CENTER * 16.2, y: T_CENTER * 9.35 }, 
-  { x: T_CENTER * 16.2, y: T_CENTER * 17.5 }, 
-  { x: T_CENTER * 6.25, y: T_CENTER * 17.5 }, 
-  { x: T_CENTER * 6.25, y: GAME_AREA_HEIGHT - 43.75 }, 
+  { x: T_CENTER * 2.55, y: GAME_AREA_HEIGHT - 40 },
+  { x: T_CENTER * 2.55, y: T_CENTER * 17.2 },
+  { x: T_CENTER * 2.55, y: T_CENTER * 10 },
+  { x: T_CENTER * 3.7, y: T_CENTER * 8.5 },
+  { x: T_CENTER * 3.7, y: T_CENTER * 3.8 },
+  { x: T_CENTER * 9.35, y: T_CENTER * 3.8 },
+  { x: T_CENTER * 9.35, y: T_CENTER * 9.35 },
+  { x: T_CENTER * 16.2, y: T_CENTER * 9.35 },
+  { x: T_CENTER * 16.2, y: T_CENTER * 17.5 },
+  { x: T_CENTER * 6.25, y: T_CENTER * 17.5 },
+  { x: T_CENTER * 6.25, y: GAME_AREA_HEIGHT - 43.75 },
 ];
 
 // region Tower PLacement Slots
@@ -114,7 +113,7 @@ const PLACEMENT_SLOTS = [
   { id: "r8c13", x: T_CENTER * 18.5, y: T_CENTER * 17.25 },
 ];
 
-const GAME_TICK_MS = Platform.OS === 'web' ? 30 : 60;
+const GAME_TICK_MS = Platform.OS === "web" ? 30 : 60;
 let entityId = 0;
 
 const TOWER_KEYS = Object.keys(TOWER_CONFIG);
@@ -153,7 +152,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
   // region --- Game Logic
   const startGame = () => {
     setHealth(GAME_SETTINGS.STARTING_HEALTH); // Configured
-    setMoney(GAME_SETTINGS.STARTING_MONEY);   // Configured
+    setMoney(GAME_SETTINGS.STARTING_MONEY); // Configured
     setScore(0);
     setWave(0);
     setTowers([]);
@@ -241,8 +240,9 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 
     // Get configuration for this specific wave (index is wave - 1)
     // If wave > config length, just reuse the last wave's config
-    const waveData = WAVE_CONFIG[newWave - 1] || WAVE_CONFIG[WAVE_CONFIG.length - 1];
-    
+    const waveData =
+      WAVE_CONFIG[newWave - 1] || WAVE_CONFIG[WAVE_CONFIG.length - 1];
+
     const numEnemies = waveData.count;
     const newQueue = [];
 
@@ -255,17 +255,17 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
       // Determine path based on type
       let assignedPath = MAIN_PATH; // Imported
       if (enemyType === "dustenemy") {
-        assignedPath = DUST_PATH;   // Imported
+        assignedPath = DUST_PATH; // Imported
       }
 
       const baseHealth = ENEMY_CONFIG[enemyType].health;
       // Use hpBonus from config instead of hardcoded * 10
-      const scaledHealth = baseHealth + waveData.hpBonus; 
+      const scaledHealth = baseHealth + waveData.hpBonus;
 
-      newQueue.push({ 
-        type: enemyType, 
-        health: scaledHealth, 
-        path: assignedPath 
+      newQueue.push({
+        type: enemyType,
+        health: scaledHealth,
+        path: assignedPath,
       });
     }
 
@@ -277,9 +277,9 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
   const gameLoop = useCallback(() => {
     // 1. Check game state
     if (gameState !== "playing") {
-        // Reset timer if paused so we don't jump
-        lastFrameTimeRef.current = Date.now();
-        return;
+      // Reset timer if paused so we don't jump
+      lastFrameTimeRef.current = Date.now();
+      return;
     }
 
     // 2. Calculate Delta Time (dt) in seconds
@@ -299,7 +299,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 
     // 1. Update Towers
     const updatedTowers = towers.map((tower) => {
-      let newCooldown = tower.fireCooldown - (dt * 1000);
+      let newCooldown = tower.fireCooldown - dt * 1000;
       let target = enemies.find((e) => e.id === tower.targetId);
 
       if (!target || getDistance(tower, target) > tower.range) {
@@ -347,7 +347,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
         tower.aoeCooldown = tower.aoeTickRate;
       }
 
-      tower.aoeCooldown -= (dt * 1000);
+      tower.aoeCooldown -= dt * 1000;
 
       // Only trigger damage when timer hits zero
       if (tower.aoeCooldown <= 0) {
@@ -380,7 +380,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     }
 
     const updatedSpikes = spikes
-      .map((s) => ({ ...s, duration: s.duration - (dt * 1000) }))
+      .map((s) => ({ ...s, duration: s.duration - dt * 1000 }))
       .filter((s) => s.duration > 0);
 
     setSpikes([...updatedSpikes, ...pendingSpikes]);
@@ -433,7 +433,8 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 
       const currentPath = e.path || path;
 
-      if (e.waypointIndex >= currentPath.length) { // Check against currentPath
+      if (e.waypointIndex >= currentPath.length) {
+        // Check against currentPath
         newHealth -= 1;
         continue;
       }
@@ -463,20 +464,20 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 
     // 4. Spawn Enemies
     if (waveInProgress && spawnQueueRef.current.length > 0) {
-      spawnTimerRef.current -= (dt * 1000);
+      spawnTimerRef.current -= dt * 1000;
       if (spawnTimerRef.current <= 0) {
         spawnTimerRef.current = 1000;
         const enemyData = spawnQueueRef.current.shift();
-        
+
         // --- FIX: Define enemyPath before using it ---
-        const enemyPath = enemyData.path || path; 
+        const enemyPath = enemyData.path || path;
 
         enemiesToSpawn.push({
           id: `enemy_${entityId++}`,
           ...ENEMY_CONFIG[enemyData.type],
-          path: enemyPath,     // Now this variable exists!
-          x: enemyPath[0].x,   // Start at the beginning of THIS path
-          y: enemyPath[0].y,   // Start at the beginning of THIS path
+          path: enemyPath, // Now this variable exists!
+          x: enemyPath[0].x, // Start at the beginning of THIS path
+          y: enemyPath[0].y, // Start at the beginning of THIS path
           health: enemyData.health,
           maxHealth: enemyData.health,
           waypointIndex: 1,
@@ -676,17 +677,47 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
           ) : (
             <XCircle size={50} color="#EF4444" style={appStyles.leakGameIcon} />
           )}
+
           <Text style={appStyles.gameTitle}>
             {isWin ? "System Secured!" : "Game Over"}
           </Text>
-          <Text style={appStyles.leakGameFinalScore}>{score}</Text>
-          <Text style={appStyles.gameSubtitle}>Final Score</Text>
+
+          {/* --- Summary Box --- */}
+          <View
+            style={{
+              backgroundColor: "#1F2937",
+              padding: 15,
+              borderRadius: 10,
+              marginVertical: 15,
+              width: "85%",
+            }}
+          >
+            <Text style={{ color: "white", fontSize: 16, marginBottom: 5 }}>
+              Lives Lost:{" "}
+              <Text style={{ color: "#F87171" }}>
+                {GAME_SETTINGS.STARTING_HEALTH - health}
+              </Text>
+            </Text>
+
+            <Text style={{ color: "white", fontSize: 16, marginBottom: 5 }}>
+              Towers Placed:{" "}
+              <Text style={{ color: "#60A5FA" }}>{towers.length}</Text>
+            </Text>
+
+            <Text style={{ color: "white", fontSize: 16 }}>
+              Score: <Text style={{ color: "#FBBF24" }}>{score}</Text>
+            </Text>
+          </View>
+
+          {/* Old final score removed */}
+          {/* Buttons */}
           <TouchableOpacity
             onPress={resetGame}
             style={appStyles.leakGameStartButton}
           >
             <Text style={appStyles.leakGameStartButtonText}>Play Again</Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={[appStyles.backToHubButton, { marginTop: 10 }]}
             onPress={() => finishGame(score)}
@@ -729,14 +760,13 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
             style={[
               appStyles.leakGameHeaderValue,
               // Red color when < 5 seconds left
-              { color: timeToNextWave > 5 ? "#3B82F6" : "#EF4444" }, 
+              { color: timeToNextWave > 5 ? "#3B82F6" : "#EF4444" },
             ]}
           >
             {/* You'll need to import Clock from lucide-react-native */}
             {timeToNextWave > 0 ? `${timeToNextWave}s` : "Go!"}
           </Text>
         </View>
-
       </View>
 
       {/* Game Area */}
@@ -754,8 +784,6 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
           style={[StyleSheet.absoluteFill, { width: "100%", height: "100%" }]}
           resizeMode="stretch"
         />
-
-        
 
         {/* Child 2: Placement Slot Indicators (Optional: Shows where you can build) */}
         {/* Only show these when dragging a tower to guide the player */}
@@ -931,8 +959,6 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
             <ChevronRight size={28} color="#3B82F6" />
           </TouchableOpacity>
         </View>
-
-        
       </View>
     </View>
   );
