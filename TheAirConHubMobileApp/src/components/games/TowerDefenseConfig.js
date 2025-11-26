@@ -2,12 +2,6 @@ import React from "react";
 import { Wind, Bug } from "lucide-react-native";
 import { Dimensions } from "react-native";
 
-// --- SCREEN CONSTANTS (Needed for Path Calculations) ---
-const { width } = Dimensions.get("window");
-export const GAME_AREA_WIDTH = 350; 
-export const GAME_AREA_HEIGHT = 350;
-const TILE_SIZE = GAME_AREA_WIDTH / 10; 
-const T_CENTER = TILE_SIZE / 2;
 
 // --- GAME SETTINGS ---
 export const GAME_SETTINGS = {
