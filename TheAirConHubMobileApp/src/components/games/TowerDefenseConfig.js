@@ -1,5 +1,22 @@
 import React from "react";
 import { Wind, Bug } from "lucide-react-native";
+import { Dimensions } from "react-native";
+
+// --- SCREEN CONSTANTS (Needed for Path Calculations) ---
+const { width } = Dimensions.get("window");
+export const GAME_AREA_WIDTH = 350; 
+export const GAME_AREA_HEIGHT = 350;
+const TILE_SIZE = GAME_AREA_WIDTH / 10; 
+const T_CENTER = TILE_SIZE / 2;
+
+// --- GAME SETTINGS ---
+export const GAME_SETTINGS = {
+  STARTING_HEALTH: 3,
+  STARTING_MONEY: 300,
+  INITIAL_PREP_TIME: 15, // Seconds before Wave 1
+  WAVE_PREP_TIME: 10,    // Seconds between waves
+  MAX_WAVES: 5,
+};
 
 const gameAssets = {
   //Game Map
@@ -25,6 +42,23 @@ const gameAssets = {
 
 export const GAME_MAP = gameAssets.map;
 
+
+
+
+// --- WAVE CONFIGURATION ---
+export const WAVE_CONFIG = [
+  // Wave 1
+  { count: 5,  hpBonus: 10, types: ["virusenemy"] },
+  // Wave 2
+  { count: 10, hpBonus: 20, types: ["virusenemy", "heatenemy"] },
+  // Wave 3 (Heat introduced)
+  { count: 15, hpBonus: 30, types: ["virusenemy", "heatenemy"] }, 
+  // Wave 4
+  { count: 20, hpBonus: 40, types: ["virusenemy", "heatenemy", "dustenemy"] },
+  // Wave 5 (Dust introduced)
+  { count: 25, hpBonus: 50, types: ["virusenemy", "heatenemy", "dustenemy"] }, 
+];
+
 export const TOWER_CONFIG = {
   wallmountedtower: {
     cost: 100,
@@ -38,7 +72,7 @@ export const TOWER_CONFIG = {
   },
 
   portabletower: {
-    cost: 300,        // Expensive
+    cost: 250,        // Expensive
     range: 180,       // Long range
     damage: 150,      // High damage
     fireRate: 4000,   // Very slow fire rate
@@ -62,7 +96,7 @@ export const TOWER_CONFIG = {
   },
 
   floortower: {
-    cost: 200,
+    cost: 150,
     range: 100,
     damage: 15,
     fireRate: 750,
@@ -79,7 +113,7 @@ export const ENEMY_CONFIG = {
   virusenemy: {
     health: 200,
     speed: 40,
-    money: 5,
+    money: 10,
     size: 40,
     icon: (color) => <Bug size={18} color={color} />, // Fallback
     sprite: gameAssets.virus,
@@ -87,7 +121,7 @@ export const ENEMY_CONFIG = {
   heatenemy: {
     health: 350,
     speed: 30,
-    money: 10,
+    money: 25,
     size: 50,
     icon: (color) => <Bug size={18} color={color} />, // Fallback
     sprite: gameAssets.heat,
@@ -95,7 +129,7 @@ export const ENEMY_CONFIG = {
   dustenemy: {
     health: 150,
     speed: 60,
-    money: 3,
+    money: 10,
     size: 30,
     icon: (color) => <Bug size={18} color={color} />, // Fallback
     sprite: gameAssets.dust,
