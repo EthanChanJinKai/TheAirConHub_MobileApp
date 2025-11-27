@@ -313,22 +313,6 @@ const createInitialLevel = (stage) => {
     }
   }
   
-  // 5. Add fixed obstacles for Stage 3
-  if (stage === 3) {
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const posKey = `${r},${c}`;
-        if (grid[r][c].type === 'START' || grid[r][c].type === 'END' || solutionRotations.hasOwnProperty(posKey)) {
-          continue;
-        }
-        
-        if (Math.random() < 0.25) {
-          grid[r][c].isFixed = true;
-        }
-      }
-    }
-  }
-  
   // --- NEW: Step 6 - Find and assign rat pipes ---
   const straightPipeCoords = [];
   for (let r = 0; r < rows; r++) {

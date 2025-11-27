@@ -287,7 +287,7 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={[appStyles.backToHubButton, { marginTop: 10 }]} // Using shared style
-            onPress={finishGame} // Use finishGame to award points and exit
+            onPress={finishGame} // Use finishGame to award poin  ts and exit
           >
             <Text style={appStyles.backToHubButtonText}>Back to Games</Text>
           </TouchableOpacity>
