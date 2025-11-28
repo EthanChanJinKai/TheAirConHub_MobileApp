@@ -6,16 +6,30 @@ import {
   Pressable,
   ImageBackground,
   ScrollView,
+  Dimensions, // Added Dimensions
 } from "react-native";
 
 import dust from "../../../assets/tapchallenge/dust.png";
 import dirt from "../../../assets/tapchallenge/dirt.png";
 import evaporatorCoil from "../../../assets/tapchallenge/evaporator_coil.png";
 
+// MODIFIED: Get screen width for responsiveness
+const screenWidth = Dimensions.get("window").width;
+// Use 1024px as a clear breakpoint for "laptop" or wide screens
+const isWideScreen = screenWidth >= 1024; 
+
+// MODIFIED: Define new, larger sprite sizes for easier tapping
+const SPRITE_SIZE = {
+    small: { width: 50, height: 50, offset: 25 },
+    large: { width: 70, height: 70, offset: 35 },
+};
+
+
 const styles = {
   gameCard: {
-    width: "94%",
-    maxWidth: 620, // WIDER
+    width: "98%", 
+    // MODIFIED: Increased max width to allow a very wide container for laptops
+    maxWidth: 1600, 
     backgroundColor: "#FFFFFF",
     borderRadius: 32,
     paddingVertical: 30,
@@ -43,7 +57,8 @@ const styles = {
   },
 
   gameAreaWrapper: {
-    width: "100%",
+    // MODIFIED: Always take 100% width of the card, filling the screen on laptops
+    width: "100%", 
     backgroundColor: "#0F172A",
     borderRadius: 18,
     padding: 6,
@@ -52,7 +67,8 @@ const styles = {
 
   gameArea: {
     width: "100%",
-    height: 420, // Wider rectangle
+    // MODIFIED: Reduced height for wide screens (350px) to create a landscape (wider) aspect ratio
+    height: isWideScreen ? 350 : 480, 
     backgroundColor: "#0F172A",
     borderRadius: 18,
     overflow: "hidden",
@@ -139,11 +155,13 @@ const CleanTheCoilGame = () => {
   };
 
   const spawnDirt = () => {
-    // FIXED: Stay inside coil boundaries
+    
     const newDirt = {
       id: Date.now() + Math.random(),
-      x: Math.random() * 70 + 15, // Always inside coil WIDTH
-      y: Math.random() * 65 + 18, // Always inside coil HEIGHT
+      // MODIFIED: Adjusted X-coordinate range (10% to 90%) to utilize the full, wider area
+      x: Math.random() * 80 + 10, 
+      // Y range adjusted for the shorter height
+      y: Math.random() * 75 + 10, 
       size: Math.random() > 0.75 ? "large" : "small",
       type: Math.random() > 0.5 ? "dust" : "dirt",
       lifetime: Math.random() > 0.6 ? 1800 : 1500,
@@ -187,7 +205,7 @@ const CleanTheCoilGame = () => {
       return { icon: "🥈", name: "Silver" };
     if (finalScore >= BRONZE_THRESHOLD)
       return { icon: "🥉", name: "Bronze" };
-    return { icon: "😓", name: "Try Again" };
+    return { icon: "🙁", name: "Try Again" };
   };
 
   return (
@@ -224,27 +242,34 @@ const CleanTheCoilGame = () => {
             style={styles.gameArea}
             resizeMode="cover"
           >
-            {dirtSpots.map((spot) => (
-              <Pressable
-                key={spot.id}
-                onPress={() => cleanDirt(spot.id, spot.size)}
-                style={{
-                  position: "absolute",
-                  left: `${spot.x}%`,
-                  top: `${spot.y}%`,
-                  transform: [{ translateX: -15 }, { translateY: -15 }],
-                }}
-              >
-                <Image
-                  source={spot.type === "dust" ? dust : dirt}
+            {dirtSpots.map((spot) => {
+              const sizeData = spot.size === "large" ? SPRITE_SIZE.large : SPRITE_SIZE.small;
+
+              return (
+                <Pressable
+                  key={spot.id}
+                  onPress={() => cleanDirt(spot.id, spot.size)}
                   style={{
-                    width: spot.size === "large" ? 56 : 40,
-                    height: spot.size === "large" ? 56 : 40,
+                    position: "absolute",
+                    left: `${spot.x}%`,
+                    top: `${spot.y}%`,
+                    // MODIFIED: Center the larger sprite using the offset
+                    transform: [{ translateX: -sizeData.offset }, { translateY: -sizeData.offset }],
+                    // MODIFIED: Add padding to make the pressable area bigger than the image
+                    padding: 5,
                   }}
-                  resizeMode="contain"
-                />
-              </Pressable>
-            ))}
+                >
+                  <Image
+                    source={spot.type === "dust" ? dust : dirt}
+                    style={{
+                      width: sizeData.width,
+                      height: sizeData.height,
+                    }}
+                    resizeMode="contain"
+                  />
+                </Pressable>
+              );
+            })}
           </ImageBackground>
         </View>
 
