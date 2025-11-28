@@ -4,7 +4,6 @@ import { X, Sparkles, Dices, Wrench, Search, CloudOff, Castle, Cast } from "luci
 import { styles } from "../styles/AppStyles";
 
 // Import all game components
-import TapChallengeGame from "./games/TapChallengeGame";
 import BrokenPipelineGame from "./games/BrokenPipelineGame";
 import FindTheLeakGame from "./games/FindTheLeakGame";
 import BlockTheHazeGame from "./games/BlockTheHazeGame";
@@ -12,6 +11,7 @@ import WheelOfFortuneGame from "./games/WheelOfFortuneGame";
 import TowerDefenseGame from "./games/TowerDefenseGame";
 
 import GameHubScreen from "./games/GameHubScreen";
+import CleanTheCoilGame from "./games/CleanTheCoilGame";
 
 const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
   const [activeGameKey, setActiveGameKey] = useState(initialGameKey || null);
@@ -44,7 +44,7 @@ const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
       iconComponent: <CloudOff size={40} color="#3B82F6" />,
     },
     {
-      name: "Quick Tap Challenge",
+      name: "Clean the Coil",
       key: "tap",
       bonus: "+100 Points",
       iconComponent: <Sparkles size={40} color="#3B82F6" />,
@@ -91,7 +91,7 @@ const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
     switch (activeGameKey) {
       case "tap":
         return (
-          <TapChallengeGame
+          <CleanTheCoilGame
             onEarnPoints={handleEarnPointsInGame}
             onEndGame={handleEndGame}
             isPracticeMode={isPracticeMode}
