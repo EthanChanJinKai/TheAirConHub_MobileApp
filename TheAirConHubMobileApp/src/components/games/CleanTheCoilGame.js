@@ -20,90 +20,11 @@ const isWideScreen = screenWidth >= 1024;
 
 // MODIFIED: Define new, larger sprite sizes for easier tapping
 const SPRITE_SIZE = {
-    small: { width: 50, height: 50, offset: 25 },
-    large: { width: 70, height: 70, offset: 35 },
+    small: { width: 80, height: 80, offset: 40 },
+    large: { width: 110, height: 110, offset: 55 },
 };
+const GAME_AREA_SIZE = 350; 
 
-
-const styles = {
-  gameCard: {
-    width: "98%", 
-    // MODIFIED: Increased max width to allow a very wide container for laptops
-    maxWidth: 1600, 
-    backgroundColor: "#FFFFFF",
-    borderRadius: 32,
-    paddingVertical: 30,
-    paddingHorizontal: 24,
-    alignSelf: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.18,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 12,
-    elevation: 10,
-    marginTop: 20,
-    marginBottom: 40,
-  },
-
-  scoreBar: {
-    width: "100%",
-    backgroundColor: "#1E293B",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 14,
-    marginBottom: 18,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  gameAreaWrapper: {
-    // MODIFIED: Always take 100% width of the card, filling the screen on laptops
-    width: "100%", 
-    backgroundColor: "#0F172A",
-    borderRadius: 18,
-    padding: 6,
-    marginBottom: 22,
-  },
-
-  gameArea: {
-    width: "100%",
-    // MODIFIED: Reduced height for wide screens (350px) to create a landscape (wider) aspect ratio
-    height: isWideScreen ? 350 : 480, 
-    backgroundColor: "#0F172A",
-    borderRadius: 18,
-    overflow: "hidden",
-  },
-
-  startButton: {
-    backgroundColor: "#3B82F6",
-    paddingVertical: 16,
-    paddingHorizontal: 40,
-    borderRadius: 16,
-    alignItems: "center",
-    marginTop: 15,
-  },
-
-  startButtonText: {
-    color: "white",
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-
-  tryAgainButton: {
-    backgroundColor: "#3B82F6",
-    paddingVertical: 18,
-    paddingHorizontal: 50,
-    borderRadius: 16,
-    alignItems: "center",
-    marginTop: 22,
-  },
-
-  tryAgainText: {
-    color: "white",
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-};
 
 const CleanTheCoilGame = () => {
   const [score, setScore] = useState(0);
@@ -158,10 +79,10 @@ const CleanTheCoilGame = () => {
     
     const newDirt = {
       id: Date.now() + Math.random(),
-      // MODIFIED: Adjusted X-coordinate range (10% to 90%) to utilize the full, wider area
+      // Keep x between 10% and 90%
       x: Math.random() * 80 + 10, 
-      // Y range adjusted for the shorter height
-      y: Math.random() * 75 + 10, 
+      // Keep y between 10% and 90%
+      y: Math.random() * 80 + 10, 
       size: Math.random() > 0.75 ? "large" : "small",
       type: Math.random() > 0.5 ? "dust" : "dirt",
       lifetime: Math.random() > 0.6 ? 1800 : 1500,
@@ -217,21 +138,24 @@ const CleanTheCoilGame = () => {
 
         {gameActive && (
           <View style={styles.scoreBar}>
-            <View>
-              <Text className="text-slate-300 text-xs">Score</Text>
-              <Text className="text-green-400 text-xl font-bold">{score}</Text>
+            {/* Score Section */}
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ color: "#94A3B8", fontSize: 12, marginBottom: 2 }}>Score</Text>
+              <Text style={{ color: "#4ADE80", fontSize: 20, fontWeight: "bold" }}>{score}</Text>
             </View>
 
-            <View>
-              <Text className="text-slate-300 text-xs">Combo</Text>
-              <Text className="text-orange-400 text-xl font-bold">
+            {/* Combo Section */}
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ color: "#94A3B8", fontSize: 12, marginBottom: 2 }}>Combo</Text>
+              <Text style={{ color: "#FBBF24", fontSize: 20, fontWeight: "bold" }}>
                 {combo > 0 ? `${combo}x` : "-"}
               </Text>
             </View>
 
-            <View>
-              <Text className="text-slate-300 text-xs">Time</Text>
-              <Text className="text-blue-400 text-xl font-bold">{timeLeft}s</Text>
+            {/* Time Section */}
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ color: "#94A3B8", fontSize: 12, marginBottom: 2 }}>Time</Text>
+              <Text style={{ color: "#60A5FA", fontSize: 20, fontWeight: "bold" }}>{timeLeft}s</Text>
             </View>
           </View>
         )}
@@ -240,7 +164,7 @@ const CleanTheCoilGame = () => {
           <ImageBackground
             source={evaporatorCoil}
             style={styles.gameArea}
-            resizeMode="cover"
+            resizeMode="stretch" // Changed from "cover" to "stretch" to fill the square exactly like TD
           >
             {dirtSpots.map((spot) => {
               const sizeData = spot.size === "large" ? SPRITE_SIZE.large : SPRITE_SIZE.small;
@@ -295,5 +219,86 @@ const CleanTheCoilGame = () => {
     </ScrollView>
   );
 };
+
+
+const styles = {
+  gameCard: {
+    // Changed: Removed "width: 98%" and huge maxWidth. 
+    // Now it wraps the content tightly like Tower Defense.
+    alignSelf: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 32,
+    paddingVertical: 30,
+    paddingHorizontal: 24,
+    shadowColor: "#000",
+    shadowOpacity: 0.18,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    elevation: 10,
+    marginTop: 20,
+    marginBottom: 40,
+    alignItems: 'center', // Centers the game board inside the card
+  },
+
+  scoreBar: {
+    width: GAME_AREA_SIZE, // Match the game board width
+    backgroundColor: "#1E293B",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    marginBottom: 18,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  gameAreaWrapper: {
+    width: GAME_AREA_SIZE,  // Fixed 350
+    height: GAME_AREA_SIZE, // Fixed 350
+    backgroundColor: "#0F172A",
+    borderRadius: 18,
+    padding: 6,
+    marginBottom: 22,
+  },
+
+  gameArea: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#0F172A",
+    borderRadius: 12, // Slightly smaller radius for inner container
+    overflow: "hidden",
+  },
+
+  startButton: {
+    width: GAME_AREA_SIZE, // Match width of game
+    backgroundColor: "#3B82F6",
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: "center",
+    marginTop: 15,
+  },
+
+  startButtonText: {
+    color: "white",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+
+  tryAgainButton: {
+    width: GAME_AREA_SIZE,
+    backgroundColor: "#3B82F6",
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: "center",
+    marginTop: 22,
+  },
+
+  tryAgainText: {
+    color: "white",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+};  
+
 
 export default CleanTheCoilGame;
