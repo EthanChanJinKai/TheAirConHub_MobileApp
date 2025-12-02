@@ -693,7 +693,6 @@ export const styles = StyleSheet.create({
   // endregion
 
   // region Leak Game
-  // region Leak Game
   leakGameReadyContainer: {
     padding: 15,
     alignItems: "center",

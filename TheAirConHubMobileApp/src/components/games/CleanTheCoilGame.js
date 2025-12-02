@@ -6,8 +6,11 @@ import {
   Pressable,
   ImageBackground,
   ScrollView,
-  Dimensions, // Added Dimensions
+  Dimensions, 
+  StyleSheet, // Required for localStyles
+  TouchableOpacity, // Required for buttons
 } from "react-native";
+import { Sparkles, CheckCircle } from "lucide-react-native"; // Icons for Ready/Game Over screens
 
 import dust from "../../../assets/tapchallenge/dust.png";
 import dirt from "../../../assets/tapchallenge/dirt.png";
@@ -20,18 +23,19 @@ const isWideScreen = screenWidth >= 1024;
 
 // MODIFIED: Define new, larger sprite sizes for easier tapping
 const SPRITE_SIZE = {
-    small: { width: 80, height: 80, offset: 40 },
-    large: { width: 110, height: 110, offset: 55 },
+    small: { width: 100, height: 100, offset: 40 },
+    large: { width: 150, height: 150, offset: 55 },
 };
 const GAME_AREA_SIZE = 350; 
 
 
-const CleanTheCoilGame = () => {
+// NEW: Accept props for game integration (even if not used here)
+const CleanTheCoilGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
   const [score, setScore] = useState(0);
-  const [gameActive, setGameActive] = useState(false);
+  // MODIFIED: Use 'ready' state to manage game flow (ready, playing, gameover)
+  const [gameState, setGameState] = useState("ready"); 
   const [dirtSpots, setDirtSpots] = useState([]);
   const [timeLeft, setTimeLeft] = useState(45);
-  const [gameOver, setGameOver] = useState(false);
   const [combo, setCombo] = useState(0);
   const [missedSpots, setMissedSpots] = useState(0);
 
@@ -42,12 +46,22 @@ const CleanTheCoilGame = () => {
   const BRONZE_THRESHOLD = 500;
   const SILVER_THRESHOLD = 850;
   const GOLD_THRESHOLD = 1000;
+  
+  // Helper to check if game is active
+  const gameActive = gameState === "playing"; 
+
+  const stopTimers = () => {
+    clearTimeout(spawnTimerRef.current);
+    clearTimeout(gameTimerRef.current);
+    clearTimeout(comboTimerRef.current);
+  };
+
 
   useEffect(() => {
     if (gameActive && timeLeft > 0) {
       gameTimerRef.current = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
     } else if (gameActive && timeLeft === 0) {
-      endGame();
+      endGame(); 
     }
 
     return () => clearTimeout(gameTimerRef.current);
@@ -55,7 +69,7 @@ const CleanTheCoilGame = () => {
 
   useEffect(() => {
     if (gameActive) spawnDirt();
-    return () => clearTimeout(spawnTimerRef.current);
+    return () => stopTimers(); 
   }, [gameActive]);
 
   const startGame = () => {
@@ -64,16 +78,23 @@ const CleanTheCoilGame = () => {
     setDirtSpots([]);
     setCombo(0);
     setMissedSpots(0);
-    setGameOver(false);
-    setGameActive(true);
+    setGameState("playing"); 
   };
 
   const endGame = () => {
-    setGameActive(false);
-    setGameOver(true);
-    clearTimeout(spawnTimerRef.current);
-    clearTimeout(gameTimerRef.current);
+    setGameState("gameover"); 
+    stopTimers();
   };
+  
+  const finishGame = () => {
+    stopTimers();
+    if (!isPracticeMode && score > 0) {
+      // Assuming onEarnPoints handles point submission
+      onEarnPoints(score); 
+    }
+    onEndGame(); // Call the external handler to exit the minigame
+  };
+
 
   const spawnDirt = () => {
     
@@ -105,13 +126,15 @@ const CleanTheCoilGame = () => {
   };
 
   const cleanDirt = (spotId, size) => {
+    if (!gameActive) return;
+
     setDirtSpots((prev) => prev.filter((s) => s.id !== spotId));
 
     const newCombo = combo + 1;
     setCombo(newCombo);
 
     const base = size === "large" ? 15 : 10;
-    const multiplier = Math.floor(newCombo / 5) * 0.5 + 1;
+    const multiplier = Math.floor(newCombo / 5) * 0.5 + 1; 
 
     setScore((s) => s + Math.floor(base * multiplier));
 
@@ -126,45 +149,121 @@ const CleanTheCoilGame = () => {
       return { icon: "🥈", name: "Silver" };
     if (finalScore >= BRONZE_THRESHOLD)
       return { icon: "🥉", name: "Bronze" };
-    return { icon: "🙁", name: "Try Again" };
+    return { icon: "😞", name: "Try Again" };
   };
 
-  return (
-    <ScrollView className="flex-1 bg-[#2563EB] p-4">
-      <View style={styles.gameCard}>
-        <Text className="text-4xl font-bold text-slate-800 text-center mb-4">
-          Clean the Coil!
-        </Text>
+  // --- RENDER LOGIC ---
 
-        {gameActive && (
-          <View style={styles.scoreBar}>
-            {/* Score Section */}
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ color: "#94A3B8", fontSize: 12, marginBottom: 2 }}>Score</Text>
-              <Text style={{ color: "#4ADE80", fontSize: 20, fontWeight: "bold" }}>{score}</Text>
-            </View>
-
-            {/* Combo Section */}
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ color: "#94A3B8", fontSize: 12, marginBottom: 2 }}>Combo</Text>
-              <Text style={{ color: "#FBBF24", fontSize: 20, fontWeight: "bold" }}>
-                {combo > 0 ? `${combo}x` : "-"}
-              </Text>
-            </View>
-
-            {/* Time Section */}
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ color: "#94A3B8", fontSize: 12, marginBottom: 2 }}>Time</Text>
-              <Text style={{ color: "#60A5FA", fontSize: 20, fontWeight: "bold" }}>{timeLeft}s</Text>
-            </View>
+  // 1. Ready Screen
+  if (gameState === "ready") {
+    return (
+      <View style={localStyles.gameCard}> 
+        <View style={localStyles.coilGameReadyContainer}> 
+          <Sparkles size={50} color="#3B82F6" style={localStyles.coilGameIcon} /> 
+          <Text style={localStyles.gameTitle}>Clean the Coil</Text>
+          <Text style={localStyles.gameSubtitle}>
+            Tap quickly to scrub the dirt and dust off the evaporator coil!
+          </Text>
+          
+          <View style={localStyles.coilGameHowTo}> 
+            <Text style={localStyles.coilGameHowToTitle}>How to Play:</Text>
+            <Text style={localStyles.coilGameHowToText}>
+              • Tap all Dirt and Dust spots quickly.
+            </Text>
+            <Text style={localStyles.coilGameHowToText}>
+              • The clock is ticking! 45 seconds to score as much as possible.
+            </Text>
+            <Text style={localStyles.coilGameHowToText}>
+              • Build a Combo by tapping fast for bigger scores.
+            </Text>
+            <Text style={localStyles.coilGameHowToText}>
+              • Don't miss! Missed spots reset your combo.
+            </Text>
           </View>
-        )}
+          
+          <TouchableOpacity
+            onPress={startGame}
+            style={localStyles.coilGameStartButton} 
+          >
+            <Text style={localStyles.coilGameStartButtonText}>
+              {isPracticeMode ? "Start Practice" : "Start Game"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
-        <View style={styles.gameAreaWrapper}>
+  // 2. Game Over Screen
+  if (gameState === "gameover") {
+    const medal = getMedal(score);
+
+    return (
+      <View style={localStyles.gameCard}>
+        <View style={localStyles.coilGameOverContainer}>
+          <CheckCircle size={50} color={score >= BRONZE_THRESHOLD ? "#10B981" : "#EF4444"} style={localStyles.coilGameIcon} />
+          <Text style={localStyles.gameTitle}>Game Over!</Text>
+          
+          <Text style={localStyles.gameSubtitle}>
+             {isPracticeMode ? "Practice Complete" : `Final Score:`}
+          </Text>
+          <Text style={localStyles.coilGameFinalScore}>{score}</Text> 
+          <Text style={[localStyles.gameSubtitle, {marginBottom: 20}]}>
+             {medal.icon} {medal.name} 
+          </Text>
+
+
+          <TouchableOpacity onPress={startGame} style={localStyles.coilGameStartButton}>
+            <Text style={localStyles.coilGameStartButtonText}>Try Again</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[localStyles.backToHubButton, { marginTop: 10 }]}
+            onPress={finishGame} 
+          >
+            <Text style={localStyles.backToHubButtonText}>Back to Games</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+
+  // 3. Active Game Screen (gameState === 'playing')
+  return (
+    <ScrollView style={localStyles.scrollContainer}>
+      <View style={localStyles.gameCard}>
+        {/* Title */}
+        <Text style={localStyles.gameTitle}>Clean the Coil</Text> 
+        
+        {/* Score/Time Bar */}
+        <View style={localStyles.scoreBar}>
+          {/* Score Section */}
+          <View style={localStyles.scoreBarItem}>
+            <Text style={localStyles.scoreBarLabel}>Score</Text>
+            <Text style={[localStyles.scoreBarValue, { color: "#4ADE80" }]}>{score}</Text>
+          </View>
+
+          {/* Combo Section */}
+          <View style={localStyles.scoreBarItem}>
+            <Text style={localStyles.scoreBarLabel}>Combo</Text>
+            <Text style={[localStyles.scoreBarValue, { color: "#FBBF24" }]}>
+              {combo > 0 ? `${combo}x` : "-"}
+            </Text>
+          </View>
+
+          {/* Time Section */}
+          <View style={localStyles.scoreBarItem}>
+            <Text style={localStyles.scoreBarLabel}>Time</Text>
+            <Text style={[localStyles.scoreBarValue, { color: "#60A5FA" }]}>{timeLeft}s</Text>
+          </View>
+        </View>
+
+        {/* Game Area */}
+        <View style={localStyles.gameAreaWrapper}>
           <ImageBackground
             source={evaporatorCoil}
-            style={styles.gameArea}
-            resizeMode="stretch" // Changed from "cover" to "stretch" to fill the square exactly like TD
+            style={localStyles.gameArea}
+            resizeMode="stretch" 
           >
             {dirtSpots.map((spot) => {
               const sizeData = spot.size === "large" ? SPRITE_SIZE.large : SPRITE_SIZE.small;
@@ -177,9 +276,8 @@ const CleanTheCoilGame = () => {
                     position: "absolute",
                     left: `${spot.x}%`,
                     top: `${spot.y}%`,
-                    // MODIFIED: Center the larger sprite using the offset
+                    // Center the sprite
                     transform: [{ translateX: -sizeData.offset }, { translateY: -sizeData.offset }],
-                    // MODIFIED: Add padding to make the pressable area bigger than the image
                     padding: 5,
                   }}
                 >
@@ -197,34 +295,26 @@ const CleanTheCoilGame = () => {
           </ImageBackground>
         </View>
 
-        {!gameActive && !gameOver && (
-          <Pressable style={styles.startButton} onPress={startGame}>
-            <Text style={styles.startButtonText}>Start Cleaning</Text>
-          </Pressable>
-        )}
-
-        {gameOver && (
-          <View className="items-center">
-            <Text className="text-6xl">{getMedal(score).icon}</Text>
-            <Text className="text-slate-800 text-4xl font-bold mt-4">
-              {score} Points
-            </Text>
-
-            <Pressable style={styles.tryAgainButton} onPress={startGame}>
-              <Text style={styles.tryAgainText}>Try Again</Text>
-            </Pressable>
-          </View>
-        )}
+        {/* Additional Info */}
+        <Text style={[localStyles.gameSubtitle, { fontSize: 11, marginTop: 5 }]}>
+            Missed spots: {missedSpots}
+        </Text>
       </View>
     </ScrollView>
   );
 };
 
 
-const styles = {
+// CONSOLIDATED: All styles are defined here.
+const localStyles = StyleSheet.create({
+  scrollContainer: {
+    flex: 1, 
+    backgroundColor: "#2563EB", 
+    padding: 4
+  },
+  
+  // GameCard Style (previously localStyles.gameCard and appStyles.gameCard)
   gameCard: {
-    // Changed: Removed "width: 98%" and huge maxWidth. 
-    // Now it wraps the content tightly like Tower Defense.
     alignSelf: "center",
     backgroundColor: "#FFFFFF",
     borderRadius: 32,
@@ -237,11 +327,88 @@ const styles = {
     elevation: 10,
     marginTop: 20,
     marginBottom: 40,
-    alignItems: 'center', // Centers the game board inside the card
+    alignItems: 'center',
+    width: GAME_AREA_SIZE + 48,
+    maxWidth: 450,
   },
-
+  
+  // Ready/Game Over Styles (replacing appStyles.leakGame*)
+  gameTitle: { 
+      fontSize: 32, 
+      fontWeight: 'bold', 
+      color: '#1F2937', 
+      marginBottom: 10 
+  },
+  gameSubtitle: { 
+      fontSize: 14, 
+      color: '#6B7280', 
+      textAlign: 'center', 
+      marginBottom: 15 
+  },
+  coilGameReadyContainer: { 
+      alignItems: 'center', 
+      paddingHorizontal: 20 
+  }, 
+  coilGameIcon: { 
+      marginBottom: 15 
+  },
+  coilGameHowTo: { 
+      backgroundColor: '#374151', 
+      padding: 15, 
+      borderRadius: 10, 
+      marginVertical: 15, 
+      width: '100%' 
+  },
+  coilGameHowToTitle: { 
+      fontWeight: 'bold', 
+      fontSize: 16, 
+      color: '#1F2937', 
+      marginBottom: 5 
+  },
+  coilGameHowToText: { 
+      fontSize: 14,
+      color: '#D1D5DB', 
+      lineHeight: 18, 
+  },
+  coilGameStartButton: { 
+      backgroundColor: '#3B82F6', 
+      paddingVertical: 14, 
+      borderRadius: 12, 
+      width: '100%',
+      alignItems: 'center',
+      marginTop: 10,
+  },
+  coilGameStartButtonText: { 
+      color: 'white', 
+      fontSize: 18, 
+      fontWeight: 'bold' 
+  },
+  coilGameOverContainer: { 
+      alignItems: 'center', 
+      paddingHorizontal: 20 
+  },
+  coilGameFinalScore: { 
+      fontSize: 48, 
+      fontWeight: 'bold', 
+      color: '#3B82F6', 
+      marginVertical: 10 
+  },
+  backToHubButton: { 
+      backgroundColor: '#6B7280', 
+      paddingVertical: 12, 
+      borderRadius: 10, 
+      width: '100%',
+      alignItems: 'center',
+  },
+  backToHubButtonText: { 
+      color: 'white', 
+      fontSize: 16, 
+      fontWeight: 'bold' 
+  },
+  
+  // Game Active Styles 
   scoreBar: {
-    width: GAME_AREA_SIZE, // Match the game board width
+    width: GAME_AREA_SIZE, 
     backgroundColor: "#1E293B",
     paddingVertical: 14,
     paddingHorizontal: 20,
@@ -251,10 +418,13 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "center",
   },
+  scoreBarItem: { alignItems: 'center' },
+  scoreBarLabel: { color: "#94A3B8", fontSize: 12, marginBottom: 2 },
+  scoreBarValue: { fontSize: 20, fontWeight: "bold" },
 
   gameAreaWrapper: {
-    width: GAME_AREA_SIZE,  // Fixed 350
-    height: GAME_AREA_SIZE, // Fixed 350
+    width: GAME_AREA_SIZE, 
+    height: GAME_AREA_SIZE,
     backgroundColor: "#0F172A",
     borderRadius: 18,
     padding: 6,
@@ -265,40 +435,15 @@ const styles = {
     width: "100%",
     height: "100%",
     backgroundColor: "#0F172A",
-    borderRadius: 12, // Slightly smaller radius for inner container
+    borderRadius: 12, 
     overflow: "hidden",
   },
 
-  startButton: {
-    width: GAME_AREA_SIZE, // Match width of game
-    backgroundColor: "#3B82F6",
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: "center",
-    marginTop: 15,
-  },
-
-  startButtonText: {
-    color: "white",
-    fontSize: 20,
+  medal: {
+    fontSize: 48,
     fontWeight: "bold",
-  },
-
-  tryAgainButton: {
-    width: GAME_AREA_SIZE,
-    backgroundColor: "#3B82F6",
-    paddingVertical: 18,
-    borderRadius: 16,
-    alignItems: "center",
-    marginTop: 22,
-  },
-
-  tryAgainText: {
-    color: "white",
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-};  
+  }
+});
 
 
 export default CleanTheCoilGame;
