@@ -66,11 +66,11 @@ const images = {
     require("../../../assets/pipelines/crosspipe_v4.png"), // Index 3
   ],
 };
-
 // endregion Images
 
+//region Map Generation Logic
 const STAGE_CONFIG = {
-  1: {
+  1: { //Stage 1 Config (4x4 with 1 Rat Pipe, 1 Lizard Pipe)
     rows: 4,
     cols: 4,
     start: { r: 0, c: 0 },
@@ -80,7 +80,7 @@ const STAGE_CONFIG = {
     numLizPipes: 1,
     numWebPipes: 0,
   },
-  2: {
+  2: { //Stage 2 Config (5x5 with 3 Rat Pipes, 1 Lizard Pipe, 1 Web Pipe)
     rows: 5,
     cols: 5,
     start: { r: 0, c: 0 },
@@ -90,7 +90,7 @@ const STAGE_CONFIG = {
     numLizPipes: 1,
     numWebPipes: 1,
   },
-  3: {
+  3: { //Stage 3 Config (6x6 with 5 Rat Pipes, 2 Lizard Pipes, 1 Web Pipe)
     rows: 6,
     cols: 6,
     start: { r: 0, c: 0 },
@@ -105,7 +105,7 @@ const STAGE_CONFIG = {
 const { width: windowWidth, height: windowHeight } = Dimensions.get("window");
 const gameAreaSize = Math.min(windowWidth * 0.9, windowHeight * 0.7);
 
-//region Map Generation Logic
+//Directional Helper for Pathfinding
 const getDir = (from, to) => {
   if (to.r < from.r) return "TOP";
   if (to.r > from.r) return "BOTTOM";
@@ -114,8 +114,9 @@ const getDir = (from, to) => {
   return null;
 };
 
+// Determine pipe type and rotation from two openings
 const getPipeFromOpenings = (openings) => {
-  const [o1, o2] = openings.sort();
+  const [o1, o2] = openings.sort(); // Normalize Order
 
   if (o1 === "BOTTOM" && o2 === "TOP") return { type: "STRAIGHT", rotation: 1 }; // Vertical
   if (o1 === "LEFT" && o2 === "RIGHT") return { type: "STRAIGHT", rotation: 0 }; // Horizontal
@@ -128,6 +129,7 @@ const getPipeFromOpenings = (openings) => {
   return { type: "STRAIGHT", rotation: 0 };
 };
 
+// Determine rotation for START/END pipes based on direction
 const getTerminalRotation = (dir) => {
   if (dir === "TOP") return 0;
   if (dir === "RIGHT") return 1;
@@ -136,6 +138,7 @@ const getTerminalRotation = (dir) => {
   return 0;
 };
 
+// Shuffle Helper
 const shuffleArray = (array) => {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -164,8 +167,7 @@ const createInitialLevel = (stage) => {
         .map(() => {
           const rand = Math.random();
           let type;
-          // 96% chance for normal pipes (48% each)
-          if (rand < 0.48) {
+          if (rand < 0.48) { 
             type = "STRAIGHT";
           } else if (rand < 0.96) {
             type = "L_BEND";
@@ -924,11 +926,11 @@ export default function BrokenPipelineGame({
     return (
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.container}
+        contentContainerStyle={styles.centeredScrollViewContainer}
       >
-        <View style={styles.pipeReadyContainer}>
+        <View style={styles.instructionBox}>
           <Wrench size={50} color="#007bff" style={styles.pipeIcon} />
-          <Text style={styles.gameTitle}>Pipeline Puzzle</Text>
+          <Text style={styles.gameTitle}>Broken Pipeline</Text>
           <Text style={styles.gameSubtitle}>
             Restore the flow by connecting the pipes from start to finish!
           </Text>
@@ -936,14 +938,14 @@ export default function BrokenPipelineGame({
           <View style={styles.pipeHowTo}>
             <Text style={styles.pipeHowToTitle}>How to Play:</Text>
             <Text style={styles.pipeHowToText}>
-              • Tap any white pipe piece to **rotate** it.
+              • Tap any white pipe piece to rotate it.
             </Text>
             <Text style={styles.pipeHowToText}>
               • Connect the pipes so the blue flow from the Start pipe reaches
               the End pipe.
             </Text>
             <Text style={styles.pipeHowToText}>
-              • Gray pipes are **fixed** and cannot be rotated.
+              • Gray pipes are fixed and cannot be rotated.
             </Text>
             <Text style={styles.pipeHowToText}>
               • Progress through 3 stages with increasing complexity.
@@ -951,7 +953,7 @@ export default function BrokenPipelineGame({
           </View>
           <TouchableOpacity onPress={startGame} style={styles.pipeStartButton}>
             <Text style={styles.pipeStartButtonText}>
-              {isPracticeMode ? "Start Practice" : "Start Game"}
+              {isPracticeMode ? "Start Practice" : "Start Fixing"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -964,9 +966,9 @@ export default function BrokenPipelineGame({
     return (
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.container}
+        contentContainerStyle={styles.centeredScrollViewContainer}
       >
-        <View style={styles.pipeReadyContainer}>
+        <View style={styles.instructionBox}>
           <CheckCircle size={50} color="#28a745" style={styles.pipeIcon} />
           <Text style={styles.gameTitle}>Puzzle Complete!</Text>
 
@@ -1018,10 +1020,6 @@ export default function BrokenPipelineGame({
       </View>
 
       {stageWon && <Text style={styles.winText}>CONNECTED!</Text>}
-
-      <TouchableOpacity style={styles.button} onPress={resetGame}>
-        <Text style={styles.buttonText}>Start New Game</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -1031,75 +1029,96 @@ export default function BrokenPipelineGame({
 const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
-    backgroundColor: "#f7f7f7",
+    backgroundColor: "#2563EB",
+  },
+  // NEW: To center the content inside the ScrollView for the ready/gameover state
+  centeredScrollViewContainer: {
+    flexGrow: 1, // Ensures content takes up available space
+    justifyContent: 'center', // Centers vertically
+    paddingVertical: 20, // Add some top/bottom padding
+    paddingHorizontal: 15,
   },
   container: {
-    flexGrow: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
+    alignSelf: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 32,
+    paddingVertical: 30,
+    paddingHorizontal: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.18,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    elevation: 10,
+    // Note: Removed the old vertical margins.
+    alignItems: 'center',
+    // INCREASED WIDTH for the main game area
+    maxWidth: 550, // Increased from 450
   },
 
   // Ready/Game Over Styles
+  instructionBox: {
+    backgroundColor: "white",
+    borderRadius: 24,
+    padding: 24,
+    width: "100%",
+    maxWidth: 400,
+  },
   gameTitle: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#333",
+    color: "#1F2937",
     marginBottom: 10,
+    textAlign: "center",
   },
   gameSubtitle: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: 16,
+    color: "#6B7280",
     textAlign: "center",
-    marginBottom: 15,
-  },
-  pipeReadyContainer: {
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    borderRadius: 12,
-    marginVertical: 20,
-    maxWidth: 400,
+    marginBottom: 24,
   },
   pipeIcon: {
     marginBottom: 15,
+    alignSelf: "center",
   },
   pipeHowTo: {
     backgroundColor: "#374151",
-    padding: 15,
-    borderRadius: 10,
-    marginVertical: 5,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
     width: "100%",
+    alignSelf: "flex-start",
   },
   pipeHowToTitle: {
-    fontWeight: "bold",
-    fontSize: 16,
-    color: "#333",
-    marginBottom: 5,
+      fontWeight: 'bold', 
+      fontSize: 16, 
+      color: '#93C5FD', 
+      marginBottom: 5 
   },
   pipeHowToText: {
-    fontSize: 14,
-    color: "#D1D5DB",
-    lineHeight: 22,
+      fontSize: 12,
+      color: '#D1D5DB', 
+      lineHeight: 18, 
   },
   pipeStartButton: {
-    backgroundColor: "#007bff",
-    paddingVertical: 14,
+    backgroundColor: "#3B82F6",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 8,
     width: "100%",
-    alignItems: "center",
-    marginTop: 10,
   },
   pipeStartButtonText: {
     color: "white",
-    fontSize: 18,
     fontWeight: "bold",
+    fontSize: 16,
+    textAlign: "center",
   },
   backToHubButton: {
     backgroundColor: "#666",
     paddingVertical: 12,
     borderRadius: 8,
-    width: "100%",
+    // MODIFIED: Make it contained like CleanTheCoilGame
+    width: '85%',
+    alignSelf: 'center',
     alignItems: "center",
   },
   backToHubButtonText: {

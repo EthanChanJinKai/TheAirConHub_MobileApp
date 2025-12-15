@@ -22,14 +22,14 @@ const pointerSize = 25;
 // Define the segments of the wheel
 const segments = [
     // Ensure keys are unique if values repeat
-  { value: 10, color: "#f87171", key: "red1" },     // Red
-  { value: 5, color: "#fbbf24", key: "amber1" },    // Amber
-  { value: 20, color: "#34d399", key: "emerald" }, // Emerald
+  { value: 150, color: "#f87171", key: "red1" },     // Red
+  { value: 75, color: "#fbbf24", key: "amber1" },    // Amber
+  { value: 200, color: "#34d399", key: "emerald" }, // Emerald
   { value: 0, color: "#9ca3af", key: "gray" },    // Gray
-  { value: 15, color: "#60a5fa", key: "blue" },    // Blue
+  { value: 10, color: "#60a5fa", key: "blue" },    // Blue
   { value: 25, color: "#a78bfa", key: "violet" },  // Violet (Jackpot)
-  { value: 5, color: "#fdba74", key: "orange" },    // Orange
-  { value: 10, color: "#f472b6", key: "pink" },    // Pink
+  { value: 50, color: "#fdba74", key: "orange" },    // Orange
+  { value: 100, color: "#f472b6", key: "pink" },    // Pink
 ];
 const numSegments = segments.length;
 const segmentAngleDegrees = 360 / numSegments;

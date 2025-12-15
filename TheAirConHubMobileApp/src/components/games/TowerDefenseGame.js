@@ -13,7 +13,7 @@ import {
 import {
   Wind,
   Bug,
-  ShieldAlert,
+  Castle,
   Target,
   Coins,
   Heart,
@@ -625,7 +625,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     return (
       <View style={appStyles.gameCard}>
         <View style={appStyles.leakGameReadyContainer}>
-          <ShieldAlert
+          <Castle
             size={50}
             color="#3B82F6"
             style={appStyles.leakGameIcon}

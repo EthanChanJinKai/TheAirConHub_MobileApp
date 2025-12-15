@@ -17,18 +17,18 @@ const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
   const [activeGameKey, setActiveGameKey] = useState(initialGameKey || null);
   const [currentSlotKey, setCurrentSlotKey] = useState(initialGameKey || null);
 
-  // Game definitions with icons
+  //region Game Options with Icons & Bonuses
   const minigames = [
     {
       name: "Wheel of Fortune",
       key: "wheel",
-      bonus: "+25 Points",
+      bonus: "0 - 200 Points",
       iconComponent: <Dices size={40} color="#3B82F6" />,
     },
     {
       name: "Broken Pipeline",
       key: "sequence",
-      bonus: "+50 Points",
+      bonus: "25 - 125 Points",
       iconComponent: <Wrench size={40} color="#3B82F6" />,
     },
     {
@@ -40,23 +40,25 @@ const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
     {
       name: "Block the Haze",
       key: "block",
-      bonus: "+50 Points",
+      bonus: "0 - 125 Points",
       iconComponent: <CloudOff size={40} color="#3B82F6" />,
     },
     {
       name: "Clean the Coil",
       key: "tap",
-      bonus: "+100 Points",
+      bonus: "0 - 125 Points",
       iconComponent: <Sparkles size={40} color="#3B82F6" />,
     },
     {
-      name: "Tower Defense Game",
+      name: "A/C Tower Defense",
       key: "towerDefense",
-      bonus: "+150 Points",
+      bonus: "25 - 125 Points",
       iconComponent: <Castle size={40} color="#3B82F6" />,
     },
   ];
+  //endregion
 
+  //region Game Handling Logic
   useEffect(() => {
     // Reset active game when modal becomes visible or initial key changes
     if (visible) {
@@ -71,8 +73,7 @@ const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
 
 
   const handleEndGame = () => {
-     // Go back to the hub after a game ends
-    setActiveGameKey(null);
+    setActiveGameKey(null);  // Return to Game Hub
   }
 
   const handleSelectGame = (gameKey) => {
@@ -147,6 +148,7 @@ const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
         );
     }
   };
+  //endregion
 
   // Determine if the currently rendered component needs the ScrollView wrapper.
   // GameHubScreen uses FlatList, so it doesn't need the ScrollView.

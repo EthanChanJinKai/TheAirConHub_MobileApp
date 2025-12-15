@@ -5,39 +5,46 @@ import {
   TouchableOpacity,
   Dimensions,
   Platform,
-  StyleSheet, // Import StyleSheet
+  StyleSheet,
 } from "react-native";
 import { CloudOff, CheckCircle } from "lucide-react-native";
-// Re-import AppStyles for shared styles like gameCard, gameTitle, etc.
-import { styles as appStyles } from "../../styles/AppStyles";
+import { styles as appStyles } from "../../styles/AppStyles"; //Shared Styles
 
 // Helper to check if device is mobile based on width (adjust breakpoint as needed)
 const { width } = Dimensions.get("window");
 const isMobile = width < 768;
 
-
 const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
   const [gameState, setGameState] = useState("ready");
   const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(3);
+  const [lives, setLives] = useState(3); // Player starts with 3 lives
+  const [spawnInterval, setSpawnInterval] = useState(1500); // Set this for drop spawn speed
   const [blockerPosition, setBlockerPosition] = useState(40); // percentage from left
   const [hazeDrops, setHazeDrops] = useState([]);
   const [gameActive, setGameActive] = useState(false);
-  const [spawnInterval, setSpawnInterval] = useState(1500); // Slower spawning
   const gameAreaRef = useRef(null);
   const [gameAreaWidth, setGameAreaWidth] = useState(300); // Default width
   const blockerPositionRef = useRef(40); // Ref to track blocker position for collision
 
-  // Constants specific to this game
+
+  //region --- GAME LOGIC ---
+  // Game Constants
   const BLOCKER_WIDTH = 25; // Blocker width as percentage
   const DROP_SIZE_PERCENT = 8; // Drop size as percentage width
   const SAFE_ZONE_MARGIN = 10; // Margin from edges where drops won't spawn
 
-  // ... (useEffect hooks and game logic functions remain the same) ...
-  // Update ref whenever blockerPosition changes
-  useEffect(() => {
-    blockerPositionRef.current = blockerPosition;
-  }, [blockerPosition]);
+  // Start Game
+  const startGame = () => {
+    setScore(0);
+    setLives(3);
+    const startPos = 50 - BLOCKER_WIDTH / 2; // Center the blocker initially
+    setBlockerPosition(startPos);
+    blockerPositionRef.current = startPos;
+    setHazeDrops([]);
+    setGameActive(true);
+    setGameState("playing");
+    setSpawnInterval(1500); // Reset spawn speed
+  };
 
   // Measure game area width on layout
   const onGameAreaLayout = (event) => {
@@ -45,7 +52,12 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     setGameAreaWidth(width);
   };
 
-  // Generate random haze drop within the safe zone
+  // Keep blockerPositionRef in sync with blockerPosition state
+  useEffect(() => {
+    blockerPositionRef.current = blockerPosition;
+  }, [blockerPosition]);
+
+  // Generate random haze drop within the playable area
   const generateHazeDrop = useCallback(() => {
     const minPos = SAFE_ZONE_MARGIN;
     const maxPos = 100 - DROP_SIZE_PERCENT - SAFE_ZONE_MARGIN;
@@ -60,19 +72,6 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     };
     return newDrop;
   }, [DROP_SIZE_PERCENT, SAFE_ZONE_MARGIN]); // Dependencies for useCallback
-
-  // Start game function
-  const startGame = () => {
-    setScore(0);
-    setLives(3);
-    const startPos = 50 - BLOCKER_WIDTH / 2; // Center the blocker initially
-    setBlockerPosition(startPos);
-    blockerPositionRef.current = startPos;
-    setHazeDrops([]);
-    setGameActive(true);
-    setGameState("playing");
-    setSpawnInterval(1500); // Reset spawn speed
-  };
 
   // Spawn drops at intervals effect
   useEffect(() => {
@@ -98,16 +97,18 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 
         prev.forEach((drop) => {
           if (drop.blocked || drop.missed) {
-             if (drop.top < 110) { // Keep until off screen
-                 updated.push({ ...drop, top: drop.top + 3 }); // Continue falling slowly
-             }
-             return; // Don't process collision again
+            if (drop.top < 110) {
+              // Keep until off screen
+              updated.push({ ...drop, top: drop.top + 3 }); // Continue falling slowly
+            }
+            return; // Don't process collision again
           }
 
           const newTop = drop.top + 2; // Adjust fall speed here
 
           // Collision check zone (when drop is near the bottom)
-          if (newTop >= 85 && newTop <= 92) { // Check slightly before ground
+          if (newTop >= 85 && newTop <= 92) {
+            // Check slightly before ground
             const dropCenter = drop.position + DROP_SIZE_PERCENT / 2;
             const blockerLeft = currentBlockerPos;
             const blockerRight = currentBlockerPos + BLOCKER_WIDTH;
@@ -117,14 +118,16 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
               scoreChange += 10;
               updated.push({ ...drop, top: newTop, blocked: true });
             } else {
-                 if (newTop >= 90) { // Check if passed the blocker level
-                     livesLost += 1;
-                     updated.push({ ...drop, top: newTop, missed: true });
-                 } else {
-                    updated.push({ ...drop, top: newTop }); // Still falling towards blocker
-                 }
+              if (newTop >= 90) {
+                // Check if passed the blocker level
+                livesLost += 1;
+                updated.push({ ...drop, top: newTop, missed: true });
+              } else {
+                updated.push({ ...drop, top: newTop }); // Still falling towards blocker
+              }
             }
-          } else if (newTop < 100) { // Keep drops that haven't reached bottom
+          } else if (newTop < 100) {
+            // Keep drops that haven't reached bottom
             updated.push({ ...drop, top: newTop });
           }
           // Drops reaching top > 100 are naturally filtered out later
@@ -135,7 +138,9 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
           setScore((s) => {
             const newScore = s + scoreChange;
             if (newScore > 0 && newScore % 50 === 0) {
-              setSpawnInterval((prevInterval) => Math.max(500, prevInterval - 100)); // Cap minimum interval
+              setSpawnInterval((prevInterval) =>
+                Math.max(500, prevInterval - 100)
+              ); // Cap minimum interval
             }
             return newScore;
           });
@@ -155,36 +160,41 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
         }
 
         // Return the array of updated/kept drops
-        return updated.filter(drop => drop.top <= 110); // Filter out drops fully off screen
-
+        return updated.filter((drop) => drop.top <= 110); // Filter out drops fully off screen
       }); // End setHazeDrops
     }, 50); // Drop movement update frequency (ms)
 
     return () => clearInterval(moveInterval); // Cleanup interval
   }, [gameActive]); // Dependency: only run when gameActive changes
 
-
   // Handle touch/mouse drag on the game area
   const handlePanResponderMove = (event) => {
-    if (!gameActive || !gameAreaRef.current || !gameAreaWidth || gameAreaWidth <= 0) return;
+    if (
+      !gameActive ||
+      !gameAreaRef.current ||
+      !gameAreaWidth ||
+      gameAreaWidth <= 0
+    )
+      return;
 
     const locationX = event.nativeEvent.pageX ?? event.nativeEvent.locationX;
-     if (locationX === undefined || locationX === null) return;
+    if (locationX === undefined || locationX === null) return;
 
-     gameAreaRef.current.measure((fx, fy, width, height, px, py) => {
-        if (!width) return;
-         const relativeX = locationX - px;
-        const newPositionPercent = (relativeX / width) * 100;
-        // Clamp position ensuring the blocker stays fully within bounds
-        const clampedPosition = Math.max(
-          0,
-          Math.min(100 - BLOCKER_WIDTH, newPositionPercent - BLOCKER_WIDTH / 2) // Center blocker on touch
-        );
+    gameAreaRef.current.measure((fx, fy, width, height, px, py) => {
+      if (!width) return;
+      const relativeX = locationX - px;
+      const newPositionPercent = (relativeX / width) * 100;
+      // Clamp position ensuring the blocker stays fully within bounds
+      const clampedPosition = Math.max(
+        0,
+        Math.min(100 - BLOCKER_WIDTH, newPositionPercent - BLOCKER_WIDTH / 2) // Center blocker on touch
+      );
 
-         if (Math.abs(clampedPosition - blockerPositionRef.current) > 0.5) { // Threshold to prevent jitter
-             setBlockerPosition(clampedPosition);
-         }
-     });
+      if (Math.abs(clampedPosition - blockerPositionRef.current) > 0.5) {
+        // Threshold to prevent jitter
+        setBlockerPosition(clampedPosition);
+      }
+    });
   };
 
   // Handle continuous movement for buttons
@@ -218,7 +228,6 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     }
   };
 
-
   // Function to call when resetting the game (e.g., "Play Again")
   const resetGame = () => {
     stopMoving();
@@ -234,36 +243,49 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     }
     onEndGame();
   };
+  //endregion
 
-
-  // --- RENDER LOGIC ---
-
-  // ... (Ready and Game Over screens remain the same) ...
-    // Ready Screen
+  //region --- RENDER LOGIC ---
+  // Ready Screen
   if (gameState === "ready") {
     return (
       <View style={appStyles.gameCard}>
-        <View style={appStyles.leakGameReadyContainer}> {/* Using shared style */}
-          <CloudOff size={50} color="#3B82F6" style={appStyles.leakGameIcon} /> {/* Using shared style */}
+        <View style={appStyles.leakGameReadyContainer}>
+          {" "}
+          {/* Using shared style */}
+          <CloudOff
+            size={50}
+            color="#3B82F6"
+            style={appStyles.leakGameIcon}
+          />{" "}
+          {/* Using shared style */}
           <Text style={appStyles.gameTitle}>Block the Haze</Text>
           <Text style={appStyles.gameSubtitle}>
             Stop the toxic haze drops from reaching the ground!
           </Text>
-          <View style={appStyles.leakGameHowTo}> {/* Using shared style */}
+          <View style={appStyles.leakGameHowTo}>
+            {" "}
+            {/* Using shared style */}
             <Text style={appStyles.leakGameHowToTitle}>How to Play:</Text>
             <Text style={appStyles.leakGameHowToText}>
               • Press & hold arrow buttons to move
             </Text>
-            <Text style={appStyles.leakGameHowToText}>• Or drag the barrier directly</Text>
-            <Text style={appStyles.leakGameHowToText}>• Block falling drops (+10 pts)</Text>
-            <Text style={appStyles.leakGameHowToText}>• You have 3 lives - don't miss!</Text>
+            <Text style={appStyles.leakGameHowToText}>
+              • Or drag the barrier directly
+            </Text>
+            <Text style={appStyles.leakGameHowToText}>
+              • Block falling drops (+10 pts)
+            </Text>
+            <Text style={appStyles.leakGameHowToText}>
+              • You have 3 lives - don't miss!
+            </Text>
           </View>
           <TouchableOpacity
             onPress={startGame}
             style={appStyles.leakGameStartButton} // Using shared style
           >
             <Text style={appStyles.leakGameStartButtonText}>
-              {isPracticeMode ? "Start Practice" : "Start Game"}
+              {isPracticeMode ? "Start Practice" : "Start Blocking"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -275,14 +297,26 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
   if (gameState === "gameover") {
     return (
       <View style={appStyles.gameCard}>
-        <View style={appStyles.leakGameOverContainer}> {/* Using shared style */}
-          <CheckCircle size={50} color="#EF4444" style={appStyles.leakGameIcon} />
+        <View style={appStyles.leakGameOverContainer}>
+          {" "}
+          {/* Using shared style */}
+          <CheckCircle
+            size={50}
+            color="#EF4444"
+            style={appStyles.leakGameIcon}
+          />
           <Text style={appStyles.gameTitle}>Game Over!</Text>
-          <Text style={appStyles.leakGameFinalScore}>{score}</Text> {/* Using shared style */}
+          <Text style={appStyles.leakGameFinalScore}>{score}</Text>{" "}
+          {/* Using shared style */}
           <Text style={appStyles.gameSubtitle}>
             {isPracticeMode ? "Practice Complete" : `Final Score: ${score}`}
           </Text>
-          <TouchableOpacity onPress={resetGame} style={appStyles.leakGameStartButton}> {/* Using shared style */}
+          <TouchableOpacity
+            onPress={resetGame}
+            style={appStyles.leakGameStartButton}
+          >
+            {" "}
+            {/* Using shared style */}
             <Text style={appStyles.leakGameStartButtonText}>Play Again</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -295,7 +329,6 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
       </View>
     );
   }
-
 
   // Active Game Screen (gameState === 'playing')
   return (
@@ -351,7 +384,7 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
               },
             ]}
           >
-             <CloudOff size={isMobile ? 10 : 12} color="white" />
+            <CloudOff size={isMobile ? 10 : 12} color="white" />
           </View>
         ))}
 
@@ -378,7 +411,8 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
           onPressOut={stopMoving}
           disabled={!gameActive}
         >
-          <Text style={localStyles.hazeControlButtonText}>⬅️ LEFT</Text> {/* Use local style */}
+          <Text style={localStyles.hazeControlButtonText}>⬅️ LEFT</Text>{" "}
+          {/* Use local style */}
         </TouchableOpacity>
         <TouchableOpacity
           style={localStyles.hazeControlButton} // Use local style
@@ -386,7 +420,8 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
           onPressOut={stopMoving}
           disabled={!gameActive}
         >
-          <Text style={localStyles.hazeControlButtonText}>RIGHT ➡️</Text> {/* Use local style */}
+          <Text style={localStyles.hazeControlButtonText}>RIGHT ➡️</Text>{" "}
+          {/* Use local style */}
         </TouchableOpacity>
       </View>
 
@@ -397,8 +432,9 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     </View>
   );
 };
+//endregion
 
-// Create local StyleSheet for BlockTheHazeGame specific styles
+//region --- LOCAL STYLES ---
 const localStyles = StyleSheet.create({
   hazeGameArea: {
     backgroundColor: "#1F2937",
@@ -468,4 +504,3 @@ const localStyles = StyleSheet.create({
 });
 
 export default BlockTheHazeGame; // Export the component
-

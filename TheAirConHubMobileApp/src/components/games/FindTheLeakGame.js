@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { View, Text, TouchableOpacity, Dimensions } from "react-native";
-import { RotateCw, CheckCircle, AlertCircle } from "lucide-react-native";
+import { Search, CheckCircle, AlertCircle } from "lucide-react-native";
 import { styles } from "../../styles/AppStyles";
 import SineWaveDisplay from "./shared/SineWaveDisplay";
 import RotatingKnob from "./shared/RotatingKnob";
@@ -22,6 +22,8 @@ const getResponsiveStyles = () => {
       buttonFontSize: 18,
       statusPadding: 12,
       titleFontSize: 18,
+      knobBaseSize: 90, // Explicit size for desktop
+      waveHeight: 120, // Explicit height for desktop
     };
   } else {
     return {
@@ -34,10 +36,11 @@ const getResponsiveStyles = () => {
       buttonFontSize: 14,
       statusPadding: 8,
       titleFontSize: 14,
+      knobBaseSize: 70, // Smaller knob for mobile
+      waveHeight: 80, // Shorter wave display for mobile
     };
   }
 };
-
 const GasTypes = {
   NATURAL_GAS: {
     name: "Natural Gas",
@@ -159,7 +162,7 @@ const FindTheLeakGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     return (
       <View style={styles.gameCard}>
         <View style={styles.leakGameReadyContainer}>
-          <RotateCw size={50} color="#3B82F6" style={styles.leakGameIcon} />
+          <Search size={50} color="#3B82F6" style={styles.leakGameIcon} />
           <Text style={styles.gameTitle}>Odor Signature Match</Text>
           <Text style={styles.gameSubtitle}>
             Calibrate your detector by matching the target waveform using the
