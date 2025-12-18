@@ -34,7 +34,7 @@ const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
     {
       name: "Find the Leak",
       key: "leak",
-      bonus: "+50 Points",
+      bonus: "0 - 125 Points",
       iconComponent: <Search size={40} color="#3B82F6" />,
     },
     {

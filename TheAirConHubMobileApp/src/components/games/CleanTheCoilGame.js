@@ -18,15 +18,21 @@ import evaporatorCoil from "../../../assets/tapchallenge/evaporator_coil.png";
 
 // MODIFIED: Get screen width for responsiveness
 const screenWidth = Dimensions.get("window").width;
-// Use 1024px as a clear breakpoint for "laptop" or wide screens
+// Use 1024px as a clear breakpoint for "laptop" or wide screens 
 const isWideScreen = screenWidth >= 1024;
+
+const mobileGameSize = Math.min(
+  300, // Max size for mobile
+  screenWidth * 0.95
+);
+const DYNAMIC_GAME_AREA_SIZE = isWideScreen ? 350 : mobileGameSize;
 
 // MODIFIED: Define new, larger sprite sizes for easier tapping
 const SPRITE_SIZE = {
   small: { width: 100, height: 100, offset: 40 },
   large: { width: 150, height: 150, offset: 55 },
 };
-const GAME_AREA_SIZE = 350;
+const GAME_AREA_SIZE = DYNAMIC_GAME_AREA_SIZE;
 
 // NEW: Accept props for game integration (even if not used here)
 const CleanTheCoilGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
@@ -330,7 +336,7 @@ const localStyles = StyleSheet.create({
     borderRadius: 24,
     padding: 24,
     width: "100%",
-    maxWidth: 400,
+    maxWidth: GAME_AREA_SIZE + 48, // Account for padding
   },
 
   // Ready/Game Over Styles (replacing appStyles.leakGame*)
