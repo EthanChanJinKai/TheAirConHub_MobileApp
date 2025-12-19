@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TheAirConHubAPI.Models;
+using BCrypt.Net; // Import BCrypt
 
 namespace TheAirConHubAPI.Controllers
 {
@@ -19,7 +20,7 @@ namespace TheAirConHubAPI.Controllers
         [HttpPost("Register")]
         public async Task<ActionResult<User>> Register(RegisterRequest request)
         {
-            // 1. Basic Validation
+            // 1. Validation
             if (await _context.Users.AnyAsync(u => u.Email == request.Email))
             {
                 return BadRequest("Email already exists.");
@@ -30,13 +31,17 @@ namespace TheAirConHubAPI.Controllers
                 return BadRequest("Username already taken.");
             }
 
-            // 2. Create User (Stored as PLAIN TEXT for now)
+            // 2. Hash the Password (The Magic Step)
+            // We turn "password123" into "$2a$11$Zpw..."
+            string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
+            // 3. Create User with the HASH
             var user = new User
             {
                 FullName = request.FullName,
                 Email = request.Email,
                 Username = request.Username,
-                Password = request.Password, 
+                Password = passwordHash, // Store the hash, NEVER plain text
                 PointsBalance = 0,
                 CreatedAt = DateTime.Now
             };
@@ -44,14 +49,14 @@ namespace TheAirConHubAPI.Controllers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Registration successful!", userId = user.UserId }); // or user.UserId
+            return Ok(new { message = "Registration successful!", userId = user.UserId });
         }
 
         // POST: api/Auth/Login
         [HttpPost("Login")]
         public async Task<ActionResult> Login(LoginRequest request)
         {
-            // 1. Find the user by Username OR Email
+            // 1. Find User
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Username == request.UsernameOrEmail || u.Email == request.UsernameOrEmail);
 
@@ -60,8 +65,11 @@ namespace TheAirConHubAPI.Controllers
                 return BadRequest("User not found.");
             }
 
-            // 2. Check Password (Direct string comparison)
-            if (user.Password != request.Password)
+            // 2. Verify Password using BCrypt
+            // logic: Verify(userTypedPassword, databaseHashedPassword)
+            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
+
+            if (!isPasswordValid)
             {
                 return BadRequest("Wrong password.");
             }
@@ -70,14 +78,14 @@ namespace TheAirConHubAPI.Controllers
             return Ok(new
             {
                 message = "Login successful!",
-                userId = user.UserId, // or user.UserId
-                name = user.FullName, // or user.FullName
-                email = user.Email
+                userId = user.UserId,
+                name = user.Username,
+                email = user.Email,
+                pointsBalance = user.PointsBalance
             });
         }
     }
 
-    // DTOs (Data Transfer Objects) - What the frontend sends us
     public class RegisterRequest
     {
         public string FullName { get; set; }

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\23038\\source\\repos\\TheAirConHubBackend\\TheAirConHubAPI\\TheAirConHubAPI.csproj": {}
+    "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\TheAirConHubAPI.csproj": {}
   },
   "projects": {
-    "C:\\Users\\23038\\source\\repos\\TheAirConHubBackend\\TheAirConHubAPI\\TheAirConHubAPI.csproj": {
+    "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\TheAirConHubAPI.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\23038\\source\\repos\\TheAirConHubBackend\\TheAirConHubAPI\\TheAirConHubAPI.csproj",
+        "projectUniqueName": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\TheAirConHubAPI.csproj",
         "projectName": "TheAirConHubAPI",
-        "projectPath": "C:\\Users\\23038\\source\\repos\\TheAirConHubBackend\\TheAirConHubAPI\\TheAirConHubAPI.csproj",
+        "projectPath": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\TheAirConHubAPI.csproj",
         "packagesPath": "C:\\Users\\23038\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\23038\\source\\repos\\TheAirConHubBackend\\TheAirConHubAPI\\obj\\",
+        "outputPath": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -50,6 +50,10 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "BCrypt.Net-Next": {
+              "target": "Package",
+              "version": "[4.0.3, )"
+            },
             "Microsoft.EntityFrameworkCore.SqlServer": {
               "target": "Package",
               "version": "[8.0.11, )"
