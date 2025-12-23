@@ -269,6 +269,66 @@
         }
       }
     },
+    "/api/Game/Status": {
+      "get": {
+        "tags": [
+          "Game"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Game/Start": {
+      "post": {
+        "tags": [
+          "Game"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GameStartRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GameStartRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GameStartRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/GameScores": {
       "get": {
         "tags": [
@@ -1107,8 +1167,19 @@
           },
           "userId": {
             "type": "integer",
-            "format": "int32",
+            "format": "int32"
+          },
+          "gameId": {
+            "type": "string",
             "nullable": true
+          },
+          "attemptsUsed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastPlayedDate": {
+            "type": "string",
+            "format": "date-time"
           },
           "slotKey": {
             "type": "string",
@@ -1152,6 +1223,20 @@
           },
           "user": {
             "$ref": "#/components/schemas/User"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GameStartRequest": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "gameId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

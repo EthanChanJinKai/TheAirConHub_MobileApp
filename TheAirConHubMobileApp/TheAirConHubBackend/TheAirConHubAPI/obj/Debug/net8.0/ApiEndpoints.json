@@ -151,6 +151,43 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "TheAirConHubAPI.Controllers.GameController",
+    "Method": "StartGame",
+    "RelativePath": "api/Game/Start",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "TheAirConHubAPI.Controllers.GameStartRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "TheAirConHubAPI.Controllers.GameController",
+    "Method": "GetGameStatus",
+    "RelativePath": "api/Game/Status",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "gameId",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "TheAirConHubAPI.Controllers.GameScoresController",
     "Method": "GetGameScores",
     "RelativePath": "api/GameScores",
