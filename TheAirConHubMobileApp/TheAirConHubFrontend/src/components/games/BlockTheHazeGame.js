@@ -4,87 +4,117 @@ import {
   Text,
   TouchableOpacity,
   Dimensions,
-  Platform,
   StyleSheet,
+  Image,
+  Animated, // Added for the fade effect
 } from "react-native";
 import { CloudOff, CheckCircle } from "lucide-react-native";
-import { styles as appStyles } from "../../styles/AppStyles"; //Shared Styles
+import { styles as appStyles } from "../../styles/AppStyles";
 
-// Helper to check if device is mobile based on width (adjust breakpoint as needed)
+// Assets
+import haze from "../../../assets/blockthehaze/haze1.png";
+import haze2 from "../../../assets/blockthehaze/haze2.png";
+import hazedestroy from "../../../assets/blockthehaze/hazedestroy.gif";
+import haze2destroy from "../../../assets/blockthehaze/haze2destroy.gif";
+import platformImg from "../../../assets/blockthehaze/platform.png";
+
 const { width } = Dimensions.get("window");
-const isMobile = width < 768;
 
+//region destroying haze component
+const DestroyingHaze = ({ drop, dropSize }) => {
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 800, // Adjust this to match your GIF duration
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  return (
+    <Animated.View
+      style={[
+        localStyles.hazeDrop,
+        {
+          left: `${drop.position}%`,
+          top: `${drop.top}%`,
+          width: `${dropSize}%`,
+          opacity: fadeAnim, // Binds opacity to the animation
+        },
+      ]}
+    >
+      <Image
+        source={drop.type === 1 ? hazedestroy : haze2destroy}
+        style={{ width: '180%', height: '180%' }}
+        resizeMode="contain"
+      />
+    </Animated.View>
+  );
+};
+
+//region Main Game Component
 const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
   const [gameState, setGameState] = useState("ready");
   const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(3); // Player starts with 3 lives
-  const [spawnInterval, setSpawnInterval] = useState(1500); // Set this for drop spawn speed
-  const [blockerPosition, setBlockerPosition] = useState(40); // percentage from left
+  const [lives, setLives] = useState(3);
+  const [spawnInterval, setSpawnInterval] = useState(1500);
+  const [blockerPosition, setBlockerPosition] = useState(40);
   const [hazeDrops, setHazeDrops] = useState([]);
   const [gameActive, setGameActive] = useState(false);
   const gameAreaRef = useRef(null);
-  const [gameAreaWidth, setGameAreaWidth] = useState(300); // Default width
-  const blockerPositionRef = useRef(40); // Ref to track blocker position for collision
+  const [gameAreaWidth, setGameAreaWidth] = useState(300);
+  const blockerPositionRef = useRef(40);
 
+  const BLOCKER_WIDTH = 25;
+  const DROP_SIZE_PERCENT = 10;
+  const SAFE_ZONE_MARGIN = 10;
 
-  //region --- GAME LOGIC ---
-  // Game Constants
-  const BLOCKER_WIDTH = 25; // Blocker width as percentage
-  const DROP_SIZE_PERCENT = 8; // Drop size as percentage width
-  const SAFE_ZONE_MARGIN = 10; // Margin from edges where drops won't spawn
-
-  // Start Game
   const startGame = () => {
     setScore(0);
     setLives(3);
-    const startPos = 50 - BLOCKER_WIDTH / 2; // Center the blocker initially
+    const startPos = 50 - BLOCKER_WIDTH / 2;
     setBlockerPosition(startPos);
     blockerPositionRef.current = startPos;
     setHazeDrops([]);
     setGameActive(true);
     setGameState("playing");
-    setSpawnInterval(1500); // Reset spawn speed
+    setSpawnInterval(1500);
   };
 
-  // Measure game area width on layout
   const onGameAreaLayout = (event) => {
     const { width } = event.nativeEvent.layout;
     setGameAreaWidth(width);
   };
 
-  // Keep blockerPositionRef in sync with blockerPosition state
   useEffect(() => {
     blockerPositionRef.current = blockerPosition;
   }, [blockerPosition]);
 
-  // Generate random haze drop within the playable area
   const generateHazeDrop = useCallback(() => {
     const minPos = SAFE_ZONE_MARGIN;
     const maxPos = 100 - DROP_SIZE_PERCENT - SAFE_ZONE_MARGIN;
     const position = minPos + Math.random() * (maxPos - minPos);
+    const type = Math.random() > 0.5 ? 1 : 2;
 
-    const newDrop = {
-      id: Date.now() + Math.random(), // Unique ID
-      position: position, // % from left
-      top: -10, // Start above the screen (%)
+    return {
+      id: Date.now() + Math.random(),
+      position: position,
+      top: -10,
+      type: type,
       blocked: false,
       missed: false,
     };
-    return newDrop;
-  }, [DROP_SIZE_PERCENT, SAFE_ZONE_MARGIN]); // Dependencies for useCallback
+  }, []);
 
-  // Spawn drops at intervals effect
   useEffect(() => {
     if (!gameActive) return;
-
     const interval = setInterval(() => {
       setHazeDrops((prev) => [...prev, generateHazeDrop()]);
     }, spawnInterval);
-
-    return () => clearInterval(interval); // Cleanup on unmount or game end
+    return () => clearInterval(interval);
   }, [gameActive, generateHazeDrop, spawnInterval]);
 
-  // Move drops down and check collisions effect
   useEffect(() => {
     if (!gameActive) return;
 
@@ -93,60 +123,54 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
         const updated = [];
         let scoreChange = 0;
         let livesLost = 0;
-        const currentBlockerPos = blockerPositionRef.current; // Read ref inside interval
+        const currentBlockerPos = blockerPositionRef.current;
 
         prev.forEach((drop) => {
-          if (drop.blocked || drop.missed) {
-            if (drop.top < 110) {
-              // Keep until off screen
-              updated.push({ ...drop, top: drop.top + 3 }); // Continue falling slowly
-            }
-            return; // Don't process collision again
+          // If already blocked, just keep it in the list (DestroyingHaze component handles the rest)
+          if (drop.blocked) {
+            updated.push(drop);
+            return;
           }
 
-          const newTop = drop.top + 2; // Adjust fall speed here
+          if (drop.missed) {
+             updated.push({ ...drop, top: drop.top + 2 });
+             return;
+          }
 
-          // Collision check zone (when drop is near the bottom)
-          if (newTop >= 85 && newTop <= 92) {
-            // Check slightly before ground
+          const newTop = drop.top + 2;
+
+          // Collision detection
+          if (newTop >= 80 && newTop <= 86) {
             const dropCenter = drop.position + DROP_SIZE_PERCENT / 2;
             const blockerLeft = currentBlockerPos;
             const blockerRight = currentBlockerPos + BLOCKER_WIDTH;
 
             if (dropCenter >= blockerLeft && dropCenter <= blockerRight) {
-              // Blocked!
               scoreChange += 10;
+              // Mark as blocked - it will now stop moving in this loop
               updated.push({ ...drop, top: newTop, blocked: true });
-            } else {
-              if (newTop >= 90) {
-                // Check if passed the blocker level
-                livesLost += 1;
-                updated.push({ ...drop, top: newTop, missed: true });
-              } else {
-                updated.push({ ...drop, top: newTop }); // Still falling towards blocker
-              }
+              return;
             }
-          } else if (newTop < 100) {
-            // Keep drops that haven't reached bottom
+          }
+
+          if (newTop >= 92) {
+            livesLost += 1;
+            updated.push({ ...drop, top: newTop, missed: true });
+          } else {
             updated.push({ ...drop, top: newTop });
           }
-          // Drops reaching top > 100 are naturally filtered out later
         });
 
-        // Update score and potentially difficulty
         if (scoreChange > 0) {
           setScore((s) => {
             const newScore = s + scoreChange;
             if (newScore > 0 && newScore % 50 === 0) {
-              setSpawnInterval((prevInterval) =>
-                Math.max(500, prevInterval - 100)
-              ); // Cap minimum interval
+              setSpawnInterval((prev) => Math.max(500, prev - 100));
             }
             return newScore;
           });
         }
 
-        // Update lives and check for game over
         if (livesLost > 0) {
           setLives((l) => {
             const newLives = l - livesLost;
@@ -159,94 +183,46 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
           });
         }
 
-        // Return the array of updated/kept drops
-        return updated.filter((drop) => drop.top <= 110); // Filter out drops fully off screen
-      }); // End setHazeDrops
-    }, 50); // Drop movement update frequency (ms)
+        return updated.filter((drop) => drop.top <= 110);
+      });
+    }, 50);
 
-    return () => clearInterval(moveInterval); // Cleanup interval
-  }, [gameActive]); // Dependency: only run when gameActive changes
+    return () => clearInterval(moveInterval);
+  }, [gameActive]);
 
-  // Handle touch/mouse drag on the game area
   const handlePanResponderMove = (event) => {
-    if (
-      !gameActive ||
-      !gameAreaRef.current ||
-      !gameAreaWidth ||
-      gameAreaWidth <= 0
-    )
-      return;
-
+    if (!gameActive || !gameAreaRef.current || !gameAreaWidth) return;
     const locationX = event.nativeEvent.pageX ?? event.nativeEvent.locationX;
-    if (locationX === undefined || locationX === null) return;
-
     gameAreaRef.current.measure((fx, fy, width, height, px, py) => {
-      if (!width) return;
       const relativeX = locationX - px;
       const newPositionPercent = (relativeX / width) * 100;
-      // Clamp position ensuring the blocker stays fully within bounds
-      const clampedPosition = Math.max(
-        0,
-        Math.min(100 - BLOCKER_WIDTH, newPositionPercent - BLOCKER_WIDTH / 2) // Center blocker on touch
-      );
-
-      if (Math.abs(clampedPosition - blockerPositionRef.current) > 0.5) {
-        // Threshold to prevent jitter
-        setBlockerPosition(clampedPosition);
-      }
+      const clampedPosition = Math.max(0, Math.min(100 - BLOCKER_WIDTH, newPositionPercent - BLOCKER_WIDTH / 2));
+      setBlockerPosition(clampedPosition);
     });
   };
 
-  // Handle continuous movement for buttons
   const buttonPressInterval = useRef(null);
   const moveBlocker = (direction) => {
-    setBlockerPosition((prev) => {
-      let newPos;
-      const moveAmount = 8; // Faster movement speed
-      if (direction === "left") {
-        newPos = Math.max(0, prev - moveAmount);
-      } else {
-        newPos = Math.min(100 - BLOCKER_WIDTH, prev + moveAmount);
-      }
-      return newPos;
-    });
+    setBlockerPosition((prev) => (direction === "left" ? Math.max(0, prev - 8) : Math.min(100 - BLOCKER_WIDTH, prev + 8)));
   };
 
   const startMoving = (direction) => {
     if (!gameActive) return;
     moveBlocker(direction);
-    if (buttonPressInterval.current) clearInterval(buttonPressInterval.current);
-    buttonPressInterval.current = setInterval(() => {
-      moveBlocker(direction);
-    }, 50); // Movement frequency (ms)
+    buttonPressInterval.current = setInterval(() => moveBlocker(direction), 50);
   };
 
   const stopMoving = () => {
-    if (buttonPressInterval.current) {
-      clearInterval(buttonPressInterval.current);
-      buttonPressInterval.current = null;
-    }
+    if (buttonPressInterval.current) clearInterval(buttonPressInterval.current);
   };
 
-  // Function to call when resetting the game (e.g., "Play Again")
-  const resetGame = () => {
-    stopMoving();
-    startGame();
-  };
-
-  // Function to call when fully exiting the game (e.g., "Back to Games")
   const finishGame = () => {
     setGameActive(false);
-    stopMoving();
-    if (!isPracticeMode && score > 0) {
-      onEarnPoints(score);
-    }
+    if (!isPracticeMode && score > 0) onEarnPoints(score);
     onEndGame();
   };
-  //endregion
 
-  //region --- RENDER LOGIC ---
-  // Ready Screen
+  //region Render States
   if (gameState === "ready") {
     return (
       <View style={appStyles.gameCard}>
@@ -293,36 +269,17 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     );
   }
 
-  // Game Over Screen
   if (gameState === "gameover") {
     return (
       <View style={appStyles.gameCard}>
         <View style={appStyles.leakGameOverContainer}>
-          {" "}
-          {/* Using shared style */}
-          <CheckCircle
-            size={50}
-            color="#EF4444"
-            style={appStyles.leakGameIcon}
-          />
+          <CheckCircle size={50} color="#EF4444" style={appStyles.leakGameIcon} />
           <Text style={appStyles.gameTitle}>Game Over!</Text>
-          <Text style={appStyles.leakGameFinalScore}>{score}</Text>{" "}
-          {/* Using shared style */}
-          <Text style={appStyles.gameSubtitle}>
-            {isPracticeMode ? "Practice Complete" : `Final Score: ${score}`}
-          </Text>
-          <TouchableOpacity
-            onPress={resetGame}
-            style={appStyles.leakGameStartButton}
-          >
-            {" "}
-            {/* Using shared style */}
+          <Text style={appStyles.leakGameFinalScore}>{score}</Text>
+          <TouchableOpacity onPress={startGame} style={appStyles.leakGameStartButton}>
             <Text style={appStyles.leakGameStartButtonText}>Play Again</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[appStyles.backToHubButton, { marginTop: 10 }]} // Using shared style
-            onPress={finishGame} // Use finishGame to award poin  ts and exit
-          >
+          <TouchableOpacity style={[appStyles.backToHubButton, { marginTop: 10 }]} onPress={finishGame}>
             <Text style={appStyles.backToHubButtonText}>Back to Games</Text>
           </TouchableOpacity>
         </View>
@@ -330,177 +287,54 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     );
   }
 
-  // Active Game Screen (gameState === 'playing')
   return (
     <View style={appStyles.gameCard}>
       <Text style={appStyles.gameTitle}>Block the Haze</Text>
-
-      {/* Score and Lives Header - Using shared leak game header styles */}
       <View style={[appStyles.leakGameHeader, { marginBottom: 10 }]}>
-        <View style={appStyles.leakGameHeaderItem}>
-          <Text style={appStyles.leakGameHeaderLabel}>Score</Text>
-          <Text style={[appStyles.leakGameHeaderValue, { color: "#10B981" }]}>
-            {score}
-          </Text>
-        </View>
-        <View style={appStyles.leakGameHeaderItem}>
-          <Text style={appStyles.leakGameHeaderLabel}>Lives</Text>
-          <Text
-            style={[
-              appStyles.leakGameHeaderValue,
-              { color: lives <= 1 ? "#EF4444" : "#FBBF24" },
-            ]}
-          >
-            {"❤️".repeat(lives)}
-          </Text>
-        </View>
+        <View style={appStyles.leakGameHeaderItem}><Text style={appStyles.leakGameHeaderLabel}>Score</Text><Text style={[appStyles.leakGameHeaderValue, { color: "#10B981" }]}>{score}</Text></View>
+        <View style={appStyles.leakGameHeaderItem}><Text style={appStyles.leakGameHeaderLabel}>Lives</Text><Text style={appStyles.leakGameHeaderValue}>{"❤️".repeat(lives)}</Text></View>
       </View>
 
-      {/* Game Area - Uses localStyles */}
-      <View
-        ref={gameAreaRef}
-        style={localStyles.hazeGameArea} // Use local style
-        onLayout={onGameAreaLayout}
-        onTouchStart={handlePanResponderMove}
-        onTouchMove={handlePanResponderMove}
-      >
-        {/* Falling Haze Drops - Uses localStyles */}
+      <View ref={gameAreaRef} style={localStyles.hazeGameArea} onLayout={onGameAreaLayout} onTouchStart={handlePanResponderMove} onTouchMove={handlePanResponderMove}>
         {hazeDrops.map((drop) => (
-          <View
-            key={drop.id}
-            style={[
-              localStyles.hazeDrop, // Use local style
-              {
-                left: `${drop.position}%`,
-                top: `${drop.top}%`,
-                opacity: drop.blocked || drop.missed ? 0.4 : 1,
-                backgroundColor: drop.blocked
-                  ? "#10B981" // Green
-                  : drop.missed
-                  ? "#EF4444" // Red
-                  : "#78716C", // Default color
-                width: `${DROP_SIZE_PERCENT}%`,
-                // Note: borderRadius is now defined in localStyles.hazeDrop
-              },
-            ]}
-          >
-            <CloudOff size={isMobile ? 10 : 12} color="white" />
-          </View>
+          drop.blocked ? (
+            <DestroyingHaze key={drop.id} drop={drop} dropSize={DROP_SIZE_PERCENT} />
+          ) : (
+            <View
+              key={drop.id}
+              style={[localStyles.hazeDrop, { left: `${drop.position}%`, top: `${drop.top}%`, width: `${DROP_SIZE_PERCENT}%` }]}
+            >
+              <Image 
+                source={drop.type === 1 ? haze : haze2} 
+                style={{ width: '100%', height: '100%', opacity: drop.missed ? 0.3 : 1 }}
+                resizeMode="contain"
+              />
+            </View>
+          )
         ))}
 
-        {/* Blocker Bar - Uses localStyles */}
-        <View
-          style={[
-            localStyles.hazeBlocker, // Use local style
-            {
-              left: `${blockerPosition}%`,
-              width: `${BLOCKER_WIDTH}%`,
-            },
-          ]}
-        />
-
-        {/* Ground Line - Uses localStyles */}
+        <View style={[localStyles.hazeBlocker, { left: `${blockerPosition}%`, width: `${BLOCKER_WIDTH}%` }]}>
+          <Image source={platformImg} style={{ width: '100%', height: '100%' }} resizeMode="stretch" />
+        </View>
         <View style={localStyles.hazeGroundLine} />
       </View>
 
-      {/* Control Buttons - Uses localStyles */}
       <View style={localStyles.hazeControlsContainer}>
-        <TouchableOpacity
-          style={localStyles.hazeControlButton} // Use local style
-          onPressIn={() => startMoving("left")}
-          onPressOut={stopMoving}
-          disabled={!gameActive}
-        >
-          <Text style={localStyles.hazeControlButtonText}>⬅️ LEFT</Text>{" "}
-          {/* Use local style */}
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={localStyles.hazeControlButton} // Use local style
-          onPressIn={() => startMoving("right")}
-          onPressOut={stopMoving}
-          disabled={!gameActive}
-        >
-          <Text style={localStyles.hazeControlButtonText}>RIGHT ➡️</Text>{" "}
-          {/* Use local style */}
-        </TouchableOpacity>
+        <TouchableOpacity style={localStyles.hazeControlButton} onPressIn={() => startMoving("left")} onPressOut={stopMoving}><Text style={localStyles.hazeControlButtonText}>⬅️ LEFT</Text></TouchableOpacity>
+        <TouchableOpacity style={localStyles.hazeControlButton} onPressIn={() => startMoving("right")} onPressOut={stopMoving}><Text style={localStyles.hazeControlButtonText}>RIGHT ➡️</Text></TouchableOpacity>
       </View>
-
-      {/* Subtitle - Uses shared style */}
-      <Text style={[appStyles.gameSubtitle, { fontSize: 11, marginTop: 5 }]}>
-        Hold buttons or drag the barrier
-      </Text>
     </View>
   );
 };
-//endregion
 
-//region --- LOCAL STYLES ---
 const localStyles = StyleSheet.create({
-  hazeGameArea: {
-    backgroundColor: "#1F2937",
-    borderRadius: 12,
-    height: 350, // Adjust height as needed
-    width: "100%",
-    position: "relative",
-    overflow: "hidden",
-    marginBottom: 10,
-    borderWidth: 2,
-    borderColor: "#374151",
-  },
-  hazeDrop: {
-    position: "absolute",
-    // width is percentage based, defined inline
-    aspectRatio: 1, // Make it square based on width
-    // --- FIX: Use a large fixed value for borderRadius ---
-    borderRadius: 50, // Large value ensures circle shape regardless of size
-    // --- END FIX ---
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
-  },
-  hazeBlocker: {
-    position: "absolute",
-    bottom: 35, // Position above the ground line
-    height: 12,
-    backgroundColor: "#3B82F6", // Blocker color
-    borderRadius: 6,
-    shadowColor: "#3B82F6",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
-    elevation: 8, // For Android shadow
-  },
-  hazeGroundLine: {
-    position: "absolute",
-    bottom: 0, // At the very bottom
-    left: 0,
-    right: 0,
-    height: 4, // Thickness of the ground line
-    backgroundColor: "#EF4444", // Color for the ground line (e.g., red)
-  },
-  hazeControlsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 10, // Space between buttons
-    marginTop: 10, // Space above buttons
-  },
-  hazeControlButton: {
-    flex: 1, // Make buttons share width equally
-    backgroundColor: "#3B82F6", // Button color
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    alignItems: "center", // Center text horizontally
-  },
-  hazeControlButtonText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
+  hazeGameArea: { backgroundColor: "#1F2937", borderRadius: 12, height: 350, width: "100%", position: "relative", overflow: "hidden", marginBottom: 10, borderWidth: 2, borderColor: "#374151" },
+  hazeDrop: { position: "absolute", aspectRatio: 1, alignItems: "center", justifyContent: "center" },
+  hazeBlocker: { position: "absolute", bottom: 30, height: 25 },
+  hazeGroundLine: { position: "absolute", bottom: 0, left: 0, right: 0, height: 4, backgroundColor: "#EF4444" },
+  hazeControlsContainer: { flexDirection: "row", justifyContent: "space-between", gap: 10, marginTop: 10 },
+  hazeControlButton: { flex: 1, backgroundColor: "#3B82F6", paddingVertical: 12, borderRadius: 8, alignItems: "center" },
+  hazeControlButtonText: { color: "white", fontWeight: "bold", fontSize: 14 },
 });
 
-export default BlockTheHazeGame; // Export the component
+export default BlockTheHazeGame;
