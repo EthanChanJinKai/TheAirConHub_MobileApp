@@ -84,6 +84,26 @@ namespace TheAirConHubAPI.Controllers
                 pointsBalance = user.PointsBalance
             });
         }
+
+        // GET: api/Auth/UserInfo/5
+        [HttpGet("UserInfo/{userId}")]
+        public async Task<ActionResult> GetUserInfo(int userId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            // Return just the info we need (Points!)
+            return Ok(new
+            {
+                fullName = user.FullName,
+                email = user.Email,
+                pointsBalance = user.PointsBalance
+            });
+        }
     }
 
     public class RegisterRequest

@@ -1,18 +1,20 @@
 // src/screens/RewardsScreen.js
 
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-// Removed unused icons (Clock, ChevronUp/Down)
+import React, { useState, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Star, Trophy, Gamepad2, ChevronRight } from 'lucide-react-native'; 
+import { useFocusEffect } from '@react-navigation/native'; // To refresh on screen focus
+import AsyncStorage from '@react-native-async-storage/async-storage'; // To get UserId
+import { API_URL } from '../config';
 import { styles } from '../styles/AppStyles';
 
-// NEW: Simple button component to launch games immediately
+// Simple Button Component
 const PlayGamesButton = ({ onOpenGame }) => {
   return (
     <View style={styles.dropdownContainer}>
       <TouchableOpacity
-        style={styles.gameBanner} // Re-using your existing banner style for consistency
-        onPress={() => onOpenGame('unlimited_play')} // Pass a generic ID
+        style={styles.gameBanner}
+        onPress={() => onOpenGame('unlimited_play')}
       >
         <View style={styles.gameBannerContent}>
           <View style={{ marginRight: 15 }}>
@@ -35,7 +37,41 @@ const PlayGamesButton = ({ onOpenGame }) => {
 
 // -------------------------------------------------------------------------
 
-const RewardsScreen = ({ onShowToast, onOpenGame, points }) => {
+const RewardsScreen = ({ onShowToast, onOpenGame, points: initialPoints }) => {
+  // We use state for points now, defaulting to what was passed in (or 0)
+  const [currentPoints, setCurrentPoints] = useState(initialPoints || 0);
+  const [loading, setLoading] = useState(false);
+
+  // FETCH LATEST POINTS FROM SQL DB
+  useFocusEffect(
+    useCallback(() => {
+      const fetchUserData = async () => {
+        try {
+          // 1. Get the Logged In User ID
+          const session = await AsyncStorage.getItem('userSession');
+          if (!session) return;
+          const user = JSON.parse(session);
+          
+          // 2. Call the API
+          // Note: using the new endpoint we just made
+          const response = await fetch(`${API_URL}/Auth/UserInfo/${user.userId}`, {
+            headers: { 'ngrok-skip-browser-warning': 'true' }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            // 3. Update the UI with REAL SQL Points
+            setCurrentPoints(data.pointsBalance); 
+          }
+        } catch (error) {
+          console.error("Failed to fetch points:", error);
+        }
+      };
+
+      fetchUserData();
+    }, [])
+  );
+
   const rewards = [
     { title: '$10 Service Discount', points: 500, available: true },
     { title: '$25 Service Discount', points: 1000, available: true },
@@ -50,13 +86,15 @@ const RewardsScreen = ({ onShowToast, onOpenGame, points }) => {
         <Text style={styles.screenHeaderTitle}>Rewards</Text>
         <View style={styles.pointsCard}>
           <Star size={48} color="#FBBF24" fill="#FBBF24" />
-          <Text style={styles.pointsValue}>{points}</Text>
+          
+          {/* DISPLAY THE REAL SQL POINTS HERE */}
+          <Text style={styles.pointsValue}>{currentPoints}</Text>
+          
           <Text style={styles.pointsLabel}>Points Available</Text>
         </View>
       </View>
 
       <View style={styles.rewardsContent}>
-        {/* NEW: Single Button to Play Games */}
         <PlayGamesButton onOpenGame={onOpenGame} />
 
         {/* Rewards List */}
@@ -74,20 +112,20 @@ const RewardsScreen = ({ onShowToast, onOpenGame, points }) => {
             <TouchableOpacity
               style={[
                 styles.redeemButton,
-                (!reward.available || points < reward.points) &&
+                (!reward.available || currentPoints < reward.points) &&
                   styles.redeemButtonDisabled,
               ]}
               onPress={() =>
-                reward.available && points >= reward.points
+                reward.available && currentPoints >= reward.points
                   ? onShowToast(`Redeemed: ${reward.title}!`)
                   : onShowToast('Not enough points!')
               }
-              disabled={!reward.available || points < reward.points}
+              disabled={!reward.available || currentPoints < reward.points}
             >
               <Text
                 style={[
                   styles.redeemButtonText,
-                  (!reward.available || points < reward.points) &&
+                  (!reward.available || currentPoints < reward.points) &&
                     styles.redeemButtonTextDisabled,
                 ]}
               >

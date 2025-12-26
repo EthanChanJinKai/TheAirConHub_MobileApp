@@ -42,6 +42,22 @@
     ]
   },
   {
+    "ContainingType": "TheAirConHubAPI.Controllers.AuthController",
+    "Method": "GetUserInfo",
+    "RelativePath": "api/Auth/UserInfo/{userId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "TheAirConHubAPI.Controllers.BookingsController",
     "Method": "GetBookings",
     "RelativePath": "api/Bookings",
