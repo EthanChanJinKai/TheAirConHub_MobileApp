@@ -625,11 +625,7 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     return (
       <View style={appStyles.gameCard}>
         <View style={appStyles.leakGameReadyContainer}>
-          <Castle
-            size={50}
-            color="#3B82F6"
-            style={appStyles.leakGameIcon}
-          />
+          <Castle size={50} color="#3B82F6" style={appStyles.leakGameIcon} />
           <Text style={appStyles.gameTitle}>A/C Tower Defense</Text>
           <Text style={appStyles.gameSubtitle}>
             Defend your system from oncoming viruses!

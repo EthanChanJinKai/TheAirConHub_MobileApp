@@ -1,92 +1,157 @@
 import React, { useState, useRef } from "react";
-import { View, Text, TouchableOpacity, Image, StyleSheet, Animated } from "react-native";
-import { RotateCcw } from "lucide-react-native";
-import { styles as appStyles } from "../../styles/AppStyles";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  Animated,
+  Easing,
+  Platform,
+  Dimensions
+} from "react-native";
 
-// Map values to your specific GIF files
+const screenWidth = Dimensions.get("window").width;
+const GAME_AREA_SIZE = screenWidth >= 1024 ? 350 : Math.min(300, screenWidth * 0.95);
+
 const gachaponRewards = [
-  { value: 0, image: require("../../../assets/gachapon/0pt.gif"), color: "gray" },
-  { value: 10, image: require("../../../assets/gachapon/10pt.gif"), color: "blue" },
-  { value: 15, image: require("../../../assets/gachapon/15pt.gif"), color: "orange" },
-  { value: 20, image: require("../../../assets/gachapon/20pt.gif"), color: "green" },
-  { value: 30, image: require("../../../assets/gachapon/30pt.gif"), color: "red" },
-  { value: 40, image: require("../../../assets/gachapon/40pt.gif"), color: "purple" },
-  { value: 50, image: require("../../../assets/gachapon/50pt.gif"), color: "pink" },
-  { value: 100, image: require("../../../assets/gachapon/100pt.gif"), color: "teal" },
+  { value: 0, color: "#6b7280" },
+  { value: 10, color: "#3b82f6" },
+  { value: 15, color: "#f97316" },
+  { value: 20, color: "#22c55e" },
+  { value: 30, color: "#ef4444" },
+  { value: 40, color: "#a855f7" },
+  { value: 50, color: "#ec4899" },
+  { value: 100, color: "#14b8a6" },
 ];
 
 const GachaponGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
-  const [gameState, setGameState] = useState("ready"); // ready, spinning, dispensed
+  const [gameState, setGameState] = useState("ready");
   const [reward, setReward] = useState(null);
+  const [playCount, setPlayCount] = useState(0); 
+  
+  const knobRotation = useRef(new Animated.Value(0)).current;
 
   const handleSpin = () => {
-    if (gameState === "spinning") return;
-    
-    setGameState("spinning");
+    if (gameState !== "ready") return;
+    setPlayCount(prev => prev + 1);
+    setGameState("inserting");
 
-    // 1. Simulate the "Spinning" duration of the GachaponInsert.gif
     setTimeout(() => {
-      // 2. Determine random reward
-      const randomIndex = Math.floor(Math.random() * gachaponRewards.length);
-      const selectedReward = gachaponRewards[randomIndex];
+      setGameState("cranking");
       
-      setReward(selectedReward);
-      setGameState("dispensed");
-
-      // 3. Award points if not practice
-      if (!isPracticeMode && selectedReward.value > 0) {
-        onEarnPoints(selectedReward.value);
-      }
-    }, 3000); // Adjust this time to match the length of GachaponInsert.gif
+      Animated.timing(knobRotation, {
+        toValue: 1,
+        duration: 1500,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }).start(() => {
+        setGameState("opening");
+        const selectedReward = gachaponRewards[Math.floor(Math.random() * gachaponRewards.length)];
+        
+        setTimeout(() => {
+          setReward(selectedReward);
+          setGameState("dispensed");
+          if (!isPracticeMode && selectedReward.value > 0) {
+            onEarnPoints(selectedReward.value);
+          }
+        }, 1500);
+      });
+    }, 2000); 
   };
 
   const resetGame = () => {
-    setGameState("ready");
+    knobRotation.setValue(0);
     setReward(null);
+    setGameState("ready");
   };
 
+  const rotation = knobRotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "720deg"],
+  });
+
   return (
-    <View style={appStyles.gameCard}>
-      <Text style={appStyles.gameTitle}>Gachapon</Text>
+    <View style={localStyles.gameCard}>
+      <Text style={localStyles.gameTitle}>Gachapon</Text>
+      <Text style={localStyles.gameSubtitle}>
+        {gameState === "dispensed" ? "You won a prize!" : "Test your luck for bonus points!"}
+      </Text>
 
-      <View style={localStyles.machineContainer}>
-        {/* PHASE 1: Ready to play */}
-        {gameState === "ready" && (
-          <Image source={require("../../../assets/gachapon/Gachapon.png")} style={localStyles.mainImage} />
-        )}
+      <View style={localStyles.cropContainer}>
+        <View style={localStyles.machineWrapper}>
+          {/* MODIFIED: Gachapon.png is now hidden during 'dispensed' state */}
+          {(gameState === "ready" || gameState === "cranking") && (
+            <Image
+              source={require("../../../assets/gachapon/Gachapon.png")}
+              style={localStyles.mainImage}
+            />
+          )}
 
-        {/* PHASE 2: Coin inserted and handle cranking */}
-        {gameState === "spinning" && (
-          <Image source={require("../../../assets/gachapon/GachaponInsert.gif")} style={localStyles.mainImage} />
-        )}
+          {gameState === "cranking" && (
+            <Animated.Image
+              source={require("../../../assets/gachapon/Gachapon Knob.png")}
+              style={[localStyles.knobImage, { transform: [{ rotate: rotation }] }]}
+            />
+          )}
 
-        {/* PHASE 3: Prize Dispensed */}
-        {gameState === "dispensed" && reward && (
-          <View style={localStyles.rewardContainer}>
-            <Image source={reward.image} style={localStyles.prizeImage} />
-            <Text style={localStyles.rewardText}>You got {reward.value} Points!</Text>
-          </View>
-        )}
+          {gameState === "inserting" && (
+            <Image
+              key={`coin-${playCount}`}
+              source={require("../../../assets/gachapon/Coin Insert.gif")}
+              style={localStyles.mainImage}
+            />
+          )}
+
+          {gameState === "opening" && (
+            <Image
+              key={`latch-${playCount}`}
+              source={require("../../../assets/gachapon/Latch Open.gif")}
+              style={localStyles.mainImage}
+            />
+          )}
+
+          {/* Reward shown alone when dispensed */}
+          {gameState === "dispensed" && reward && (
+            <View style={localStyles.rewardOverlay}>
+              <View style={[localStyles.pixelBox, { borderColor: reward.color }]}>
+                <Text style={[localStyles.pixelText, { color: reward.color }]}>
+                  {reward.value}
+                </Text>
+                <Text style={[localStyles.pixelSubText, { color: reward.color }]}>
+                  POINTS
+                </Text>
+              </View>
+            </View>
+          )}
+        </View>
       </View>
 
-      {/* Controls */}
       <View style={localStyles.controls}>
-        {gameState === "ready" && (
-          <TouchableOpacity style={appStyles.startButton} onPress={handleSpin}>
-            <Text style={appStyles.startButtonText}>Insert Coin & Spin</Text>
+        {gameState === "ready" ? (
+          <TouchableOpacity 
+            style={localStyles.coilGameStartButton} 
+            onPress={handleSpin}
+          >
+            <Text style={localStyles.coilGameStartButtonText}>Insert Coin & Spin</Text>
           </TouchableOpacity>
-        )}
-
-        {gameState === "dispensed" && (
-          <View style={localStyles.buttonRow}>
-            <TouchableOpacity style={appStyles.secondaryButton} onPress={resetGame}>
-              <RotateCcw size={16} color="#4b5563" />
-              <Text style={appStyles.secondaryButtonText}>Try Again</Text>
+        ) : gameState === "dispensed" ? (
+          <View style={localStyles.buttonColumn}>
+            <TouchableOpacity 
+              style={localStyles.coilGameStartButton} 
+              onPress={resetGame}
+            >
+              <Text style={localStyles.coilGameStartButtonText}>Try Again</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={appStyles.backToHubButton} onPress={onEndGame}>
-              <Text style={appStyles.backToHubButtonText}>Exit</Text>
+            <TouchableOpacity 
+              style={localStyles.backToHubButton} 
+              onPress={onEndGame}
+            >
+              <Text style={localStyles.backToHubButtonText}>Back to Games</Text>
             </TouchableOpacity>
           </View>
+        ) : (
+          <View style={{ height: 50 }} /> 
         )}
       </View>
     </View>
@@ -94,35 +159,116 @@ const GachaponGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 };
 
 const localStyles = StyleSheet.create({
-  machineContainer: {
-    height: 400,
-    width: '100%',
+  gameCard: {
+    backgroundColor: "white",
+    borderRadius: 24,
+    padding: 24,
+    width: "100%",
+    maxWidth: GAME_AREA_SIZE + 48,
     alignItems: 'center',
+    alignSelf: 'center',
+  },
+  gameTitle: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#1F2937",
+    marginBottom: 5,
+  },
+  gameSubtitle: {
+    fontSize: 16,
+    color: "#6B7280",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  cropContainer: {
+    height: 350,
+    width: "100%",
+    overflow: 'hidden',
+    alignItems: 'center',
+  },
+  machineWrapper: {
+    marginTop: -30,
+    alignItems: 'center',
+    position: 'relative',
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
   },
   mainImage: {
-    width: 300,
-    height: 300,
-    resizeMode: 'contain',
+    width: 420,
+    height: 420,
+    resizeMode: "contain",
   },
-  rewardContainer: {
+  knobImage: {
+    position: 'absolute',
+    width: 60,   
+    height: 60,
+    top: 295, 
+    zIndex: 10,
+    resizeMode: "contain",
+  },
+  rewardOverlay: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pixelBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderWidth: 4,
+    padding: 24,
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 6, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
   },
-  prizeImage: {
-    width: 200,
-    height: 200,
-    resizeMode: 'contain',
-  },
-  rewardText: {
-    fontSize: 22,
+  pixelText: {
+    fontSize: 72,
     fontWeight: 'bold',
-    marginTop: 10,
-    color: '#374151',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', 
+    lineHeight: 72,
   },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 10,
-  }
+  pixelSubText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    letterSpacing: 2,
+  },
+  controls: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 30, // Button is pushed lower here
+  },
+  buttonColumn: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 12,
+  },
+  coilGameStartButton: {
+    backgroundColor: "#3B82F6",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    width: "85%",
+  },
+  coilGameStartButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 16,
+    textAlign: "center",
+  },
+  backToHubButton: {
+    backgroundColor: "#6B7280",
+    paddingVertical: 12,
+    borderRadius: 8,
+    width: "85%",
+    alignItems: "center",
+  },
+  backToHubButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
 });
 
 export default GachaponGame;
