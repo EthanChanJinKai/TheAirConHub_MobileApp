@@ -7,7 +7,7 @@ import { styles } from "../styles/AppStyles";
 import BrokenPipelineGame from "./games/BrokenPipelineGame";
 import FindTheLeakGame from "./games/FindTheLeakGame";
 import BlockTheHazeGame from "./games/BlockTheHazeGame";
-import WheelOfFortuneGame from "./games/WheelOfFortuneGame";
+import WheelOfFortuneGame from "./games/GachaponGame";
 import TowerDefenseGame from "./games/TowerDefenseGame";
 
 import GameHubScreen from "./games/GameHubScreen";
@@ -20,39 +20,39 @@ const GameModal = ({ visible, onClose, onEarnPoints, initialGameKey }) => {
   //region Game Options with Icons & Bonuses
   const minigames = [
     {
-      name: "Wheel of Fortune",
+      name: "Gachapon",
       key: "wheel",
-      bonus: "0 - 200 Points",
+      bonus: "0 - 100 Points",
       iconComponent: <Dices size={40} color="#3B82F6" />,
     },
     {
       name: "Broken Pipeline",
       key: "sequence",
-      bonus: "25 - 125 Points",
+      bonus: "10 - 50 Points",
       iconComponent: <Wrench size={40} color="#3B82F6" />,
     },
     {
       name: "Find the Leak",
       key: "leak",
-      bonus: "0 - 125 Points",
+      bonus: "10 - 50 Points",
       iconComponent: <Search size={40} color="#3B82F6" />,
     },
     {
       name: "Block the Haze",
       key: "block",
-      bonus: "0 - 125 Points",
+      bonus: "0 - 50 Points",
       iconComponent: <CloudOff size={40} color="#3B82F6" />,
     },
     {
       name: "Clean the Coil",
       key: "tap",
-      bonus: "0 - 125 Points",
+      bonus: "0 - 50 Points",
       iconComponent: <Sparkles size={40} color="#3B82F6" />,
     },
     {
       name: "A/C Tower Defense",
       key: "towerDefense",
-      bonus: "25 - 125 Points",
+      bonus: "10 - 50 Points",
       iconComponent: <Castle size={40} color="#3B82F6" />,
     },
   ];
