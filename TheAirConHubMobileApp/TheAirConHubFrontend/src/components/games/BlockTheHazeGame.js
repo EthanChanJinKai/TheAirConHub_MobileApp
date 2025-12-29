@@ -12,7 +12,7 @@ import { CloudOff, CheckCircle } from "lucide-react-native";
 import { styles as appStyles } from "../../styles/AppStyles";
 
 // Assets
-import haze from "../../../assets/blockthehaze/haze1.png";
+import haze from "../../../assets/blockthehaze/haze.png";
 import haze2 from "../../../assets/blockthehaze/haze2.png";
 import hazedestroy from "../../../assets/blockthehaze/hazedestroy.gif";
 import haze2destroy from "../../../assets/blockthehaze/haze2destroy.gif";

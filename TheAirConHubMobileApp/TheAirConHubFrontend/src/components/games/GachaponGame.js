@@ -181,7 +181,7 @@ const localStyles = StyleSheet.create({
     marginBottom: 10,
   },
   cropContainer: {
-    height: 350,
+    height: 360,
     width: "100%",
     overflow: 'hidden',
     alignItems: 'center',
@@ -201,9 +201,10 @@ const localStyles = StyleSheet.create({
   },
   knobImage: {
     position: 'absolute',
-    width: 60,   
-    height: 60,
-    top: 295, 
+    width: 52,    
+    height: 52,
+    top: 300, 
+    right: 128,
     zIndex: 10,
     resizeMode: "contain",
   },
@@ -214,7 +215,7 @@ const localStyles = StyleSheet.create({
   pixelBox: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderWidth: 4,
-    padding: 24,
+    padding: 24 ,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: "#000",
