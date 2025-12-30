@@ -11,6 +11,10 @@ import {
   Dimensions,
 } from "react-native";
 
+const { width } = Dimensions.get("window");
+const isDesktop = width >= 768;
+
+
 const screenWidth = Dimensions.get("window").width;
 const GAME_AREA_SIZE =
   screenWidth >= 1024 ? 350 : Math.min(300, screenWidth * 0.95);
@@ -230,7 +234,7 @@ const localStyles = StyleSheet.create({
     width: 52,
     height: 52,
     top: 300,
-    right: 153,
+    right: isDesktop ? 153 : 127,
     zIndex: 10,
     resizeMode: "contain",
   },
