@@ -1,14 +1,13 @@
 // src/screens/RewardsScreen.js
 
-import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Star, Trophy, Gamepad2, ChevronRight } from 'lucide-react-native'; 
-import { useFocusEffect } from '@react-navigation/native'; // To refresh on screen focus
-import AsyncStorage from '@react-native-async-storage/async-storage'; // To get UserId
+import { useFocusEffect } from '@react-navigation/native'; 
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 import { API_URL } from '../config';
 import { styles } from '../styles/AppStyles';
 
-// Simple Button Component
 const PlayGamesButton = ({ onOpenGame }) => {
   return (
     <View style={styles.dropdownContainer}>
@@ -20,14 +19,12 @@ const PlayGamesButton = ({ onOpenGame }) => {
           <View style={{ marginRight: 15 }}>
             <Gamepad2 size={32} color="white" />
           </View>
-          
           <View style={styles.gameBannerText}>
             <Text style={styles.gameBannerTitle}>Play Games & Earn Rewards</Text>
             <Text style={styles.gameBannerSubtitle}>
               Play anytime to earn points for discounts!
             </Text>
           </View>
-          
           <ChevronRight size={24} color="white" />
         </View>
       </TouchableOpacity>
@@ -38,30 +35,33 @@ const PlayGamesButton = ({ onOpenGame }) => {
 // -------------------------------------------------------------------------
 
 const RewardsScreen = ({ onShowToast, onOpenGame, points: initialPoints }) => {
-  // We use state for points now, defaulting to what was passed in (or 0)
+  // We initialize with the prop passed from App.js
   const [currentPoints, setCurrentPoints] = useState(initialPoints || 0);
-  const [loading, setLoading] = useState(false);
 
-  // FETCH LATEST POINTS FROM SQL DB
+  // --- NEW: AUTO-REFRESH SYNC ---
+  // This listens for changes from App.js (e.g. after a game finishes)
+  // and updates the local display instantly.
+  useEffect(() => {
+    setCurrentPoints(initialPoints);
+  }, [initialPoints]);
+
+  // --- EXISTING: Fetch Fresh on Tab Switch ---
+  // This still runs when you click the tab, just in case points changed elsewhere
   useFocusEffect(
     useCallback(() => {
       const fetchUserData = async () => {
         try {
-          // 1. Get the Logged In User ID
           const session = await AsyncStorage.getItem('userSession');
           if (!session) return;
           const user = JSON.parse(session);
           
-          // 2. Call the API
-          // Note: using the new endpoint we just made
-          const response = await fetch(`${API_URL}/Auth/UserInfo/${user.userId}`, {
+          const response = await fetch(`${API_URL}/Users/${user.userId}`, {
             headers: { 'ngrok-skip-browser-warning': 'true' }
           });
 
           if (response.ok) {
             const data = await response.json();
-            // 3. Update the UI with REAL SQL Points
-            setCurrentPoints(data.pointsBalance); 
+            setCurrentPoints(data.pointsBalance || 0); 
           }
         } catch (error) {
           console.error("Failed to fetch points:", error);
@@ -87,7 +87,7 @@ const RewardsScreen = ({ onShowToast, onOpenGame, points: initialPoints }) => {
         <View style={styles.pointsCard}>
           <Star size={48} color="#FBBF24" fill="#FBBF24" />
           
-          {/* DISPLAY THE REAL SQL POINTS HERE */}
+          {/* Displays the synced points */}
           <Text style={styles.pointsValue}>{currentPoints}</Text>
           
           <Text style={styles.pointsLabel}>Points Available</Text>
@@ -97,7 +97,6 @@ const RewardsScreen = ({ onShowToast, onOpenGame, points: initialPoints }) => {
       <View style={styles.rewardsContent}>
         <PlayGamesButton onOpenGame={onOpenGame} />
 
-        {/* Rewards List */}
         <Text style={styles.sectionTitle}>Available Rewards</Text>
         {rewards.map((reward, idx) => (
           <View key={idx} style={styles.rewardCard}>

@@ -221,13 +221,19 @@ const TowerDefenseGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 
   const handleGameOver = (win) => {
     setWaveInProgress(false);
+    let earnedPoints = 0;
     if (win) {
-      const bonus = health * 10;
-      setScore((s) => s + bonus);
+      earnedPoints = 50;
       setGameState("gamewin");
     } else {
+      // Award 10 points per fully completed wave
+      // 'wave' is the current wave index (1-based), so if we lose on wave 3, we completed 2.
+      const wavesCompleted = Math.max(0, wave - 1);
+      earnedPoints = wavesCompleted * 10;
       setGameState("gameover");
     }
+
+    setScore(earnedPoints);
   };
 
   const startWave = () => {

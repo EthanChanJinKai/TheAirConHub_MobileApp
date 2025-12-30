@@ -129,12 +129,20 @@ const FindTheLeakGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 
     if (quality >= 90) {
       setGameState("correct");
-      const roundScore = WINNING_SCORE + Math.max(0, quality - 90) * 5;
-      setScore((s) => s + roundScore);
+      
+      // --- NEW SCORING LOGIC ---
+      // Round 1 = 10pts, Round 2 = 30pts, Round 3 = 50pts
+      let roundPoints = 0;
+      if (round === 1) roundPoints = 10;
+      else if (round === 2) roundPoints = 30;
+      else if (round === 3) roundPoints = 50;
+
+      setScore((s) => s + roundPoints);
 
       if (!isPracticeMode) {
-        onEarnPoints(roundScore);
+        onEarnPoints(roundPoints); // Send fixed points
       }
+      // -------------------------
 
       setTimeout(() => {
         if (round < 3) {

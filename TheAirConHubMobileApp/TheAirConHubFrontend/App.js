@@ -13,24 +13,52 @@ import TabNavigator from './src/navigation/TabNavigator';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import { styles } from './src/styles/AppStyles';
+import { API_URL } from './src/config';
 
 const Stack = createStackNavigator();
 
 export default function App() {
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  
   const [gameVisible, setGameVisible] = useState(false);
-  const [points, setPoints] = useState(850);
+  const [activeGameId, setActiveGameId] = useState(null); 
+
+  const [points, setPoints] = useState(0); 
   const [isLoading, setIsLoading] = useState(true);
   const [initialRoute, setInitialRoute] = useState('Login');
 
-  // Check if user is already logged in when app starts
+  // --- NEW: Helper to fetch latest points from SQL ---
+  const fetchUserPoints = async () => {
+    try {
+      const session = await AsyncStorage.getItem('userSession');
+      if (!session) return;
+      const user = JSON.parse(session);
+
+      // Fetch User Details (which includes PointsBalance)
+      const response = await fetch(`${API_URL}/Users/${user.userId}`, {
+        headers: { 'ngrok-skip-browser-warning': 'true' }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update state with the Real SQL Balance
+        setPoints(data.pointsBalance || 0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch points:", error);
+    }
+  };
+
+  // Check Login Status & Fetch Points on Startup
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
         const userSession = await AsyncStorage.getItem('userSession');
         if (userSession) {
           setInitialRoute('MainTabs');
+          // Fetch points immediately if logged in
+          await fetchUserPoints();
         }
       } catch (e) {
         console.error(e);
@@ -46,9 +74,50 @@ export default function App() {
     setToastVisible(true);
   };
 
-  const handleEarnPoints = (earnedPoints) => {
-    setPoints((prev) => prev + earnedPoints);
-    showToast(`You earned ${earnedPoints} points!`);
+  // --- UPDATED: Handle Earn Points (Auto-Refresh Logic) ---
+  const handleEarnPoints = async (earnedPoints) => {
+    try {
+      const session = await AsyncStorage.getItem('userSession');
+      if (!session) return;
+      const user = JSON.parse(session);
+
+      console.log(`Sending ${earnedPoints} points to User ID: ${user.userId}`);
+
+      const response = await fetch(`${API_URL}/Users/AddPoints`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+        body: JSON.stringify({ 
+          userId: user.userId, 
+          points: earnedPoints 
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // KEY CHANGE: Use the 'newBalance' from the server directly
+        // This ensures the UI is perfectly synced with the database.
+        setPoints(data.newBalance); 
+        
+        showToast(`Saved! You earned ${earnedPoints} points.`);
+      } else {
+        console.error("Failed to save points");
+        showToast(`Earned ${earnedPoints} pts (Local Only - Error Saving)`);
+        // Fallback: update locally just in case
+        setPoints(prev => prev + earnedPoints);
+      }
+    } catch (error) {
+      console.error("Connection Error:", error);
+      showToast("Connection Error - Points not saved");
+    }
+  };
+
+  const handleOpenGame = (gameId) => {
+    setActiveGameId(gameId);
+    setGameVisible(true);
   };
 
   const Container = Platform.OS === 'web' ? View : SafeAreaView;
@@ -61,26 +130,21 @@ export default function App() {
     <Container style={styles.safeArea}>
       <NavigationContainer>
         <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
-          
-          {/* Auth Screens */}
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
-
-          {/* Main App (Your existing Tabs) */}
+          
           <Stack.Screen name="MainTabs">
             {() => (
               <TabNavigator
                 showToast={showToast}
-                onOpenGame={() => setGameVisible(true)}
-                points={points}
+                onOpenGame={handleOpenGame}
+                points={points} // Passes the live points down
               />
             )}
           </Stack.Screen>
-
         </Stack.Navigator>
       </NavigationContainer>
 
-      {/* Global Modals */}
       <ToastMessage
         visible={toastVisible}
         message={toastMessage}
@@ -88,6 +152,7 @@ export default function App() {
       />
       <GameModal
         visible={gameVisible}
+        gameId={activeGameId}
         onClose={() => setGameVisible(false)}
         onEarnPoints={handleEarnPoints}
       />

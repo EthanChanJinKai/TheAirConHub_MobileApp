@@ -204,7 +204,7 @@ const localStyles = StyleSheet.create({
     width: 52,    
     height: 52,
     top: 300, 
-    right: 128,
+    right: 153,
     zIndex: 10,
     resizeMode: "contain",
   },

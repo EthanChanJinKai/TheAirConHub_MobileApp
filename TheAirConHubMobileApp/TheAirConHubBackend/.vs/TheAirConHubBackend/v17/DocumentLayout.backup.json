@@ -3,6 +3,14 @@
   "WorkspaceRootPath": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{5637C680-CBB9-4B75-B27B-2A39DB9B600E}|TheAirConHubAPI\\TheAirConHubAPI.csproj|c:\\users\\23038\\documents\\projects\\theairconhub_mobileapp\\theairconhubmobileapp\\theairconhubbackend\\theairconhubapi\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5637C680-CBB9-4B75-B27B-2A39DB9B600E}|TheAirConHubAPI\\TheAirConHubAPI.csproj|solutionrelative:theairconhubapi\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5637C680-CBB9-4B75-B27B-2A39DB9B600E}|TheAirConHubAPI\\TheAirConHubAPI.csproj|c:\\users\\23038\\documents\\projects\\theairconhub_mobileapp\\theairconhubmobileapp\\theairconhubbackend\\theairconhubapi\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5637C680-CBB9-4B75-B27B-2A39DB9B600E}|TheAirConHubAPI\\TheAirConHubAPI.csproj|solutionrelative:theairconhubapi\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{5637C680-CBB9-4B75-B27B-2A39DB9B600E}|TheAirConHubAPI\\TheAirConHubAPI.csproj|c:\\users\\23038\\documents\\projects\\theairconhub_mobileapp\\theairconhubmobileapp\\theairconhubbackend\\theairconhubapi\\controllers\\gamecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{5637C680-CBB9-4B75-B27B-2A39DB9B600E}|TheAirConHubAPI\\TheAirConHubAPI.csproj|solutionrelative:theairconhubapi\\controllers\\gamecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -25,14 +33,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{5637C680-CBB9-4B75-B27B-2A39DB9B600E}|TheAirConHubAPI\\TheAirConHubAPI.csproj|c:\\users\\23038\\documents\\projects\\theairconhub_mobileapp\\theairconhubmobileapp\\theairconhubbackend\\theairconhubapi\\controllers\\bookingscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{5637C680-CBB9-4B75-B27B-2A39DB9B600E}|TheAirConHubAPI\\TheAirConHubAPI.csproj|solutionrelative:theairconhubapi\\controllers\\bookingscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{5637C680-CBB9-4B75-B27B-2A39DB9B600E}|TheAirConHubAPI\\TheAirConHubAPI.csproj|c:\\users\\23038\\documents\\projects\\theairconhub_mobileapp\\theairconhubmobileapp\\theairconhubbackend\\theairconhubapi\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{5637C680-CBB9-4B75-B27B-2A39DB9B600E}|TheAirConHubAPI\\TheAirConHubAPI.csproj|solutionrelative:theairconhubapi\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{5637C680-CBB9-4B75-B27B-2A39DB9B600E}|TheAirConHubAPI\\TheAirConHubAPI.csproj|c:\\users\\23038\\documents\\projects\\theairconhub_mobileapp\\theairconhubmobileapp\\theairconhubbackend\\theairconhubapi\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{5637C680-CBB9-4B75-B27B-2A39DB9B600E}|TheAirConHubAPI\\TheAirConHubAPI.csproj|solutionrelative:theairconhubapi\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -47,19 +47,32 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "GameController.cs",
-              "DocumentMoniker": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\Controllers\\GameController.cs",
-              "RelativeDocumentMoniker": "TheAirConHubAPI\\Controllers\\GameController.cs",
-              "ToolTip": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\Controllers\\GameController.cs",
-              "RelativeToolTip": "TheAirConHubAPI\\Controllers\\GameController.cs",
-              "ViewState": "AgIAAEkAAAAAAAAAAAAYwGcAAAABAAAAAAAAAA==",
+              "Title": "UsersController.cs",
+              "DocumentMoniker": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\Controllers\\UsersController.cs",
+              "RelativeDocumentMoniker": "TheAirConHubAPI\\Controllers\\UsersController.cs",
+              "ToolTip": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\Controllers\\UsersController.cs",
+              "RelativeToolTip": "TheAirConHubAPI\\Controllers\\UsersController.cs",
+              "ViewState": "AgIAAEgAAAAAAAAAAAAAAEkAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-23T01:56:05.352Z",
+              "WhenOpened": "2025-12-18T01:26:28.835Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 1,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "TheAirConHubAPI\\Controllers\\AuthController.cs",
+              "ToolTip": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "TheAirConHubAPI\\Controllers\\AuthController.cs",
+              "ViewState": "AgIAAFsAAAAAAAAAAADwv2kAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-18T01:27:22.185Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
               "Title": "GameScoresController.cs",
               "DocumentMoniker": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\Controllers\\GameScoresController.cs",
               "RelativeDocumentMoniker": "TheAirConHubAPI\\Controllers\\GameScoresController.cs",
@@ -71,7 +84,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "TheAirConHubDbContext.cs",
               "DocumentMoniker": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\Models\\TheAirConHubDbContext.cs",
               "RelativeDocumentMoniker": "TheAirConHubAPI\\Models\\TheAirConHubDbContext.cs",
@@ -83,7 +96,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "DailyGameActivity.cs",
               "DocumentMoniker": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\Models\\DailyGameActivity.cs",
               "RelativeDocumentMoniker": "TheAirConHubAPI\\Models\\DailyGameActivity.cs",
@@ -95,7 +108,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 7,
               "Title": "BookingsController.cs",
               "DocumentMoniker": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\Controllers\\BookingsController.cs",
               "RelativeDocumentMoniker": "TheAirConHubAPI\\Controllers\\BookingsController.cs",
@@ -108,18 +121,6 @@
             {
               "$type": "Document",
               "DocumentIndex": 6,
-              "Title": "AuthController.cs",
-              "DocumentMoniker": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\Controllers\\AuthController.cs",
-              "RelativeDocumentMoniker": "TheAirConHubAPI\\Controllers\\AuthController.cs",
-              "ToolTip": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\Controllers\\AuthController.cs",
-              "RelativeToolTip": "TheAirConHubAPI\\Controllers\\AuthController.cs",
-              "ViewState": "AgIAACQAAAAAAAAAAAAYwDMAAABUAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-18T01:27:22.185Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
               "Title": "User.cs",
               "DocumentMoniker": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\Models\\User.cs",
               "RelativeDocumentMoniker": "TheAirConHubAPI\\Models\\User.cs",
@@ -131,15 +132,15 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "UsersController.cs",
-              "DocumentMoniker": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\Controllers\\UsersController.cs",
-              "RelativeDocumentMoniker": "TheAirConHubAPI\\Controllers\\UsersController.cs",
-              "ToolTip": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\Controllers\\UsersController.cs",
-              "RelativeToolTip": "TheAirConHubAPI\\Controllers\\UsersController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 2,
+              "Title": "GameController.cs",
+              "DocumentMoniker": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\Controllers\\GameController.cs",
+              "RelativeDocumentMoniker": "TheAirConHubAPI\\Controllers\\GameController.cs",
+              "ToolTip": "C:\\Users\\23038\\Documents\\Projects\\TheAirConHub_MobileApp\\TheAirConHubMobileApp\\TheAirConHubBackend\\TheAirConHubAPI\\Controllers\\GameController.cs",
+              "RelativeToolTip": "TheAirConHubAPI\\Controllers\\GameController.cs",
+              "ViewState": "AgIAAEkAAAAAAAAAAAAYwEoAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-18T01:26:28.835Z"
+              "WhenOpened": "2025-12-23T01:56:05.352Z"
             }
           ]
         }

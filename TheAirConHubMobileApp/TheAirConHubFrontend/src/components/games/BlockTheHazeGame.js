@@ -6,7 +6,7 @@ import {
   Dimensions,
   StyleSheet,
   Image,
-  Animated, // Added for the fade effect
+  Animated,
 } from "react-native";
 import { CloudOff, CheckCircle } from "lucide-react-native";
 import { styles as appStyles } from "../../styles/AppStyles";
@@ -27,7 +27,7 @@ const DestroyingHaze = ({ drop, dropSize }) => {
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 0,
-      duration: 800, // Adjust this to match your GIF duration
+      duration: 800,
       useNativeDriver: true,
     }).start();
   }, []);
@@ -40,7 +40,7 @@ const DestroyingHaze = ({ drop, dropSize }) => {
           left: `${drop.position}%`,
           top: `${drop.top}%`,
           width: `${dropSize}%`,
-          opacity: fadeAnim, // Binds opacity to the animation
+          opacity: fadeAnim,
         },
       ]}
     >
@@ -115,6 +115,7 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     return () => clearInterval(interval);
   }, [gameActive, generateHazeDrop, spawnInterval]);
 
+  // MOVEMENT & COLLISION LOGIC
   useEffect(() => {
     if (!gameActive) return;
 
@@ -126,7 +127,6 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
         const currentBlockerPos = blockerPositionRef.current;
 
         prev.forEach((drop) => {
-          // If already blocked, just keep it in the list (DestroyingHaze component handles the rest)
           if (drop.blocked) {
             updated.push(drop);
             return;
@@ -146,8 +146,7 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
             const blockerRight = currentBlockerPos + BLOCKER_WIDTH;
 
             if (dropCenter >= blockerLeft && dropCenter <= blockerRight) {
-              scoreChange += 10;
-              // Mark as blocked - it will now stop moving in this loop
+              scoreChange += 1; // 1 Point per cloud blocked
               updated.push({ ...drop, top: newTop, blocked: true });
               return;
             }
@@ -164,7 +163,8 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
         if (scoreChange > 0) {
           setScore((s) => {
             const newScore = s + scoreChange;
-            if (newScore > 0 && newScore % 50 === 0) {
+            // Speed up slightly every 5 points
+            if (newScore > 0 && newScore % 5 === 0) {
               setSpawnInterval((prev) => Math.max(500, prev - 100));
             }
             return newScore;
@@ -189,6 +189,14 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 
     return () => clearInterval(moveInterval);
   }, [gameActive]);
+
+  // AUTO END GAME AT 50 POINTS
+  useEffect(() => {
+    if (score >= 50 && gameActive) {
+      setGameActive(false);
+      setGameState("gameover");
+    }
+  }, [score, gameActive]);
 
   const handlePanResponderMove = (event) => {
     if (!gameActive || !gameAreaRef.current || !gameAreaWidth) return;
@@ -218,7 +226,21 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 
   const finishGame = () => {
     setGameActive(false);
-    if (!isPracticeMode && score > 0) onEarnPoints(score);
+    
+    if (!isPracticeMode && score > 0) {
+      // --- NEW TIERED SCORING LOGIC ---
+      // 50+ = 50 pts, 30-49 = 30 pts, 10-29 = 10 pts
+      let finalPoints = 0;
+      
+      if (score >= 50) finalPoints = 50;
+      else if (score >= 30) finalPoints = 30;
+      else if (score >= 10) finalPoints = 10;
+      else finalPoints = 0;
+
+      if (finalPoints > 0) {
+        onEarnPoints(finalPoints);
+      }
+    }
     onEndGame();
   };
 
@@ -227,21 +249,17 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     return (
       <View style={appStyles.gameCard}>
         <View style={appStyles.leakGameReadyContainer}>
-          {" "}
-          {/* Using shared style */}
+          {/* FIXED: Removed extra {" "} strings causing the crash */}
           <CloudOff
             size={50}
             color="#3B82F6"
             style={appStyles.leakGameIcon}
-          />{" "}
-          {/* Using shared style */}
+          />
           <Text style={appStyles.gameTitle}>Block the Haze</Text>
           <Text style={appStyles.gameSubtitle}>
             Stop the toxic haze drops from reaching the ground!
           </Text>
           <View style={appStyles.leakGameHowTo}>
-            {" "}
-            {/* Using shared style */}
             <Text style={appStyles.leakGameHowToTitle}>How to Play:</Text>
             <Text style={appStyles.leakGameHowToText}>
               • Press & hold arrow buttons to move
@@ -250,15 +268,15 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
               • Or drag the barrier directly
             </Text>
             <Text style={appStyles.leakGameHowToText}>
-              • Block falling drops (+10 pts)
+              • Block falling drops (+1 pts)
             </Text>
             <Text style={appStyles.leakGameHowToText}>
-              • You have 3 lives - don't miss!
+              • Reach 50 points to win!
             </Text>
           </View>
           <TouchableOpacity
             onPress={startGame}
-            style={appStyles.leakGameStartButton} // Using shared style
+            style={appStyles.leakGameStartButton}
           >
             <Text style={appStyles.leakGameStartButtonText}>
               {isPracticeMode ? "Start Practice" : "Start Blocking"}
@@ -273,8 +291,8 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     return (
       <View style={appStyles.gameCard}>
         <View style={appStyles.leakGameOverContainer}>
-          <CheckCircle size={50} color="#EF4444" style={appStyles.leakGameIcon} />
-          <Text style={appStyles.gameTitle}>Game Over!</Text>
+          <CheckCircle size={50} color={score >= 50 ? "#10B981" : "#EF4444"} style={appStyles.leakGameIcon} />
+          <Text style={appStyles.gameTitle}>{score >= 50 ? "Haze Cleared!" : "Game Over!"}</Text>
           <Text style={appStyles.leakGameFinalScore}>{score}</Text>
           <TouchableOpacity onPress={startGame} style={appStyles.leakGameStartButton}>
             <Text style={appStyles.leakGameStartButtonText}>Play Again</Text>
@@ -291,7 +309,7 @@ const BlockTheHazeGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     <View style={appStyles.gameCard}>
       <Text style={appStyles.gameTitle}>Block the Haze</Text>
       <View style={[appStyles.leakGameHeader, { marginBottom: 10 }]}>
-        <View style={appStyles.leakGameHeaderItem}><Text style={appStyles.leakGameHeaderLabel}>Score</Text><Text style={[appStyles.leakGameHeaderValue, { color: "#10B981" }]}>{score}</Text></View>
+        <View style={appStyles.leakGameHeaderItem}><Text style={appStyles.leakGameHeaderLabel}>Score</Text><Text style={[appStyles.leakGameHeaderValue, { color: "#10B981" }]}>{score}/50</Text></View>
         <View style={appStyles.leakGameHeaderItem}><Text style={appStyles.leakGameHeaderLabel}>Lives</Text><Text style={appStyles.leakGameHeaderValue}>{"❤️".repeat(lives)}</Text></View>
       </View>
 

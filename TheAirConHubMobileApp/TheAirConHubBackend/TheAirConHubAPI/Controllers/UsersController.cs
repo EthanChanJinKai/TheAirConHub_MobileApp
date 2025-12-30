@@ -103,5 +103,36 @@ namespace TheAirConHubAPI.Controllers
         {
             return _context.Users.Any(e => e.UserId == id);
         }
+
+        [HttpPost("AddPoints")]
+        public async Task<IActionResult> AddPoints([FromBody] AddPointsRequest request)
+        {
+            var user = await _context.Users.FindAsync(request.UserId);
+
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            // Update the points
+            // Use (?? 0) to handle cases where PointsBalance might be null
+            user.PointsBalance = (user.PointsBalance ?? 0) + request.Points;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Points added successfully",
+                newBalance = user.PointsBalance
+            });
+        }
+    } // <--- This closes the class UsersController
+
+    // Add this Class at the bottom, OUTSIDE the UsersController class but INSIDE the namespace
+    public class AddPointsRequest
+    {
+        public int UserId { get; set; }
+        public int Points { get; set; }
     }
+    
 }

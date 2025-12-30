@@ -640,6 +640,22 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "TheAirConHubAPI.Controllers.UsersController",
+    "Method": "AddPoints",
+    "RelativePath": "api/Users/AddPoints",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "TheAirConHubAPI.Controllers.AddPointsRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "TheAirConHubAPI.Controllers.WeatherForecastController",
     "Method": "Get",
     "RelativePath": "WeatherForecast",

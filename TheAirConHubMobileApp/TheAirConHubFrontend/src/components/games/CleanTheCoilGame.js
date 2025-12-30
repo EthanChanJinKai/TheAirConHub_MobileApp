@@ -49,7 +49,7 @@ const CleanTheCoilGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
   const comboTimerRef = useRef(null);
 
   const BRONZE_THRESHOLD = 500;
-  const SILVER_THRESHOLD = 850;
+  const SILVER_THRESHOLD = 750;
   const GOLD_THRESHOLD = 1000;
 
   // Helper to check if game is active
@@ -90,13 +90,30 @@ const CleanTheCoilGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
     stopTimers();
   };
 
+  // Place this INSIDE CleanTheCoilGame, after const endGame = ...
   const finishGame = () => {
     stopTimers();
     if (!isPracticeMode && score > 0) {
-      // Assuming onEarnPoints handles point submission
-      onEarnPoints(score);
+      // --- NEW SCORING LOGIC ---
+      // 0, 10, 30, 50 Points based on Medal Tiers
+      
+      let finalPoints = 0;
+
+      if (score >= GOLD_THRESHOLD) {        // Score >= 1000
+        finalPoints = 50;
+      } else if (score >= SILVER_THRESHOLD) { // Score >= 850
+        finalPoints = 30;
+      } else if (score >= BRONZE_THRESHOLD) { // Score >= 500
+        finalPoints = 10;
+      } else {
+        finalPoints = 0;                      // Score < 500
+      }
+      
+      if (finalPoints > 0) {
+        onEarnPoints(finalPoints);
+      }
     }
-    onEndGame(); // Call the external handler to exit the minigame
+    onEndGame(); 
   };
 
   const spawnDirt = () => {
