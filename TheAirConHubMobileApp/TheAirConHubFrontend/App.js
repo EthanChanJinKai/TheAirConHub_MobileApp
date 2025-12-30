@@ -25,24 +25,23 @@ export default function App() {
   const [activeGameId, setActiveGameId] = useState(null); 
 
   const [points, setPoints] = useState(0); 
-  const [isLoading, setIsLoading] = useState(true);
-  const [initialRoute, setInitialRoute] = useState('Login');
+  
+  // FIXED: Default route is now MainTabs (Home), not Login
+  const [initialRoute, setInitialRoute] = useState('MainTabs');
 
-  // --- NEW: Helper to fetch latest points from SQL ---
+  // --- Check for existing session in background ---
   const fetchUserPoints = async () => {
     try {
       const session = await AsyncStorage.getItem('userSession');
-      if (!session) return;
+      if (!session) return; // If no user, just stay at 0 points
+      
       const user = JSON.parse(session);
-
-      // Fetch User Details (which includes PointsBalance)
       const response = await fetch(`${API_URL}/Users/${user.userId}`, {
         headers: { 'ngrok-skip-browser-warning': 'true' }
       });
 
       if (response.ok) {
         const data = await response.json();
-        // Update state with the Real SQL Balance
         setPoints(data.pointsBalance || 0);
       }
     } catch (error) {
@@ -50,23 +49,8 @@ export default function App() {
     }
   };
 
-  // Check Login Status & Fetch Points on Startup
   useEffect(() => {
-    const checkLoginStatus = async () => {
-      try {
-        const userSession = await AsyncStorage.getItem('userSession');
-        if (userSession) {
-          setInitialRoute('MainTabs');
-          // Fetch points immediately if logged in
-          await fetchUserPoints();
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    checkLoginStatus();
+    fetchUserPoints();
   }, []);
 
   const showToast = (message) => {
@@ -74,15 +58,20 @@ export default function App() {
     setToastVisible(true);
   };
 
-  // --- UPDATED: Handle Earn Points (Auto-Refresh Logic) ---
+  // --- UPDATED: Handle Earn Points (Safe for Guest) ---
   const handleEarnPoints = async (earnedPoints) => {
     try {
       const session = await AsyncStorage.getItem('userSession');
-      if (!session) return;
+      
+      // 1. If NOT logged in, just show toast but don't save to DB
+      if (!session) {
+        showToast(`You earned ${earnedPoints} pts! (Login to save)`);
+        return;
+      }
+
       const user = JSON.parse(session);
 
-      console.log(`Sending ${earnedPoints} points to User ID: ${user.userId}`);
-
+      // 2. If Logged In, save to SQL
       const response = await fetch(`${API_URL}/Users/AddPoints`, {
         method: 'POST',
         headers: { 
@@ -97,17 +86,11 @@ export default function App() {
 
       if (response.ok) {
         const data = await response.json();
-        
-        // KEY CHANGE: Use the 'newBalance' from the server directly
-        // This ensures the UI is perfectly synced with the database.
         setPoints(data.newBalance); 
-        
         showToast(`Saved! You earned ${earnedPoints} points.`);
       } else {
         console.error("Failed to save points");
-        showToast(`Earned ${earnedPoints} pts (Local Only - Error Saving)`);
-        // Fallback: update locally just in case
-        setPoints(prev => prev + earnedPoints);
+        showToast(`Error saving points`);
       }
     } catch (error) {
       console.error("Connection Error:", error);
@@ -122,26 +105,26 @@ export default function App() {
 
   const Container = Platform.OS === 'web' ? View : SafeAreaView;
 
-  if (isLoading) {
-    return <View style={{flex:1, justifyContent:'center'}}><ActivityIndicator size="large" color="#2563EB" /></View>;
-  }
-
   return (
     <Container style={styles.safeArea}>
       <NavigationContainer>
         <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
           
+          {/* Main App acts as the Landing Page now */}
           <Stack.Screen name="MainTabs">
             {() => (
               <TabNavigator
                 showToast={showToast}
                 onOpenGame={handleOpenGame}
-                points={points} // Passes the live points down
+                points={points} 
               />
             )}
           </Stack.Screen>
+
+          {/* Auth Screens accessible from Account Screen */}
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+          
         </Stack.Navigator>
       </NavigationContainer>
 

@@ -35,26 +35,26 @@ const PlayGamesButton = ({ onOpenGame }) => {
 // -------------------------------------------------------------------------
 
 const RewardsScreen = ({ onShowToast, onOpenGame, points: initialPoints }) => {
-  // We initialize with the prop passed from App.js
   const [currentPoints, setCurrentPoints] = useState(initialPoints || 0);
 
-  // --- NEW: AUTO-REFRESH SYNC ---
-  // This listens for changes from App.js (e.g. after a game finishes)
-  // and updates the local display instantly.
   useEffect(() => {
     setCurrentPoints(initialPoints);
   }, [initialPoints]);
 
-  // --- EXISTING: Fetch Fresh on Tab Switch ---
-  // This still runs when you click the tab, just in case points changed elsewhere
   useFocusEffect(
     useCallback(() => {
       const fetchUserData = async () => {
         try {
           const session = await AsyncStorage.getItem('userSession');
-          if (!session) return;
-          const user = JSON.parse(session);
           
+          // --- FIX: If no session, just stop here (don't call API) ---
+          if (!session) {
+            setCurrentPoints(0); 
+            return;
+          }
+          // -----------------------------------------------------------
+
+          const user = JSON.parse(session);
           const response = await fetch(`${API_URL}/Users/${user.userId}`, {
             headers: { 'ngrok-skip-browser-warning': 'true' }
           });

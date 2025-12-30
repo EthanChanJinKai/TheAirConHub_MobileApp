@@ -103,6 +103,7 @@ const RegisterScreen = ({ navigation }) => {
       <TextInput 
         style={styles.input} 
         placeholder="Full Name" 
+        placeholderTextColor="#666666"
         value={formData.fullName}
         onChangeText={t => updateField('fullName', t)} 
       />
@@ -110,6 +111,7 @@ const RegisterScreen = ({ navigation }) => {
       <TextInput 
         style={styles.input} 
         placeholder="Email (e.g. name@school.com)" 
+        placeholderTextColor="#666666"
         keyboardType="email-address"
         autoCapitalize="none"
         value={formData.email}
@@ -119,6 +121,7 @@ const RegisterScreen = ({ navigation }) => {
       <TextInput 
         style={styles.input} 
         placeholder="Username" 
+        placeholderTextColor="#666666"
         autoCapitalize="none"
         value={formData.username}
         onChangeText={t => updateField('username', t)} 
@@ -129,6 +132,7 @@ const RegisterScreen = ({ navigation }) => {
         <TextInput 
           style={styles.passwordInput} 
           placeholder="Password" 
+          placeholderTextColor="#666666"
           secureTextEntry={!showPass}
           value={formData.password}
           onChangeText={t => updateField('password', t)} 
@@ -143,6 +147,7 @@ const RegisterScreen = ({ navigation }) => {
         <TextInput 
           style={styles.passwordInput} 
           placeholder="Confirm Password" 
+          placeholderTextColor="#666666"
           secureTextEntry={!showConfirmPass}
           value={confirmPassword}
           onChangeText={(t) => { setConfirmPassword(t); setErrorMessage(''); }} 
@@ -170,7 +175,7 @@ const styles = StyleSheet.create({
   container: { flexGrow: 1, justifyContent: 'center', padding: 20, backgroundColor: '#fff' },
   title: { fontSize: 28, fontWeight: 'bold', color: '#2563EB', textAlign: 'center', marginBottom: 5 },
   subtitle: { fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 30 },
-  input: { backgroundColor: '#F3F4F6', padding: 15, borderRadius: 10, marginBottom: 15, fontSize: 16 },
+  input: { backgroundColor: '#F3F4F6', padding: 15, borderRadius: 10, marginBottom: 15, fontSize: 16, fontcolor: '#666' },
   passwordContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 10, marginBottom: 15 },
   passwordInput: { flex: 1, padding: 15, fontSize: 16 },
   eyeIcon: { padding: 15 },

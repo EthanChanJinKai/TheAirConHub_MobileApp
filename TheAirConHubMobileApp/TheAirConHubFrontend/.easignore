@@ -1,0 +1,9 @@
+# Ignore the Backend completely (Speed up build)
+../TheAirConHubBackend/
+TheAirConHubBackend/
+
+# Ignore Visual Studio temp files
+.vs/
+*/.vs/
+**/bin/
+**/obj/

@@ -35,6 +35,8 @@ const LoginScreen = ({ navigation }) => {
       if (response.ok) {
         const data = await response.json();
         await AsyncStorage.setItem('userSession', JSON.stringify(data));
+        
+        // Go back to the Main Tabs (Account Screen)
         navigation.replace('MainTabs'); 
       } else {
         const errorMsg = await response.text();
@@ -56,6 +58,7 @@ const LoginScreen = ({ navigation }) => {
         <TextInput 
           style={styles.input} 
           placeholder="Username or Email" 
+          placeholderTextColor="#666666"
           value={username} 
           onChangeText={(text) => { setUsername(text); setErrorMessage(''); }}
           autoCapitalize="none" 
@@ -65,6 +68,7 @@ const LoginScreen = ({ navigation }) => {
           <TextInput 
             style={styles.passwordInput} 
             placeholder="Password" 
+            placeholderTextColor="#666666"
             value={password} 
             onChangeText={(text) => { setPassword(text); setErrorMessage(''); }}
             secureTextEntry={!showPassword} 
@@ -83,19 +87,25 @@ const LoginScreen = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.navigate('Register')} style={{marginTop: 20}}>
           <Text style={{color: '#2563EB', textAlign: 'center'}}>New here? Create an Account</Text>
         </TouchableOpacity>
+        
+        {/* Added a cancel button to go back to app without logging in */}
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{marginTop: 15}}>
+          <Text style={{color: '#666', textAlign: 'center'}}>Cancel</Text>
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
 };
 
+// ... keep existing styles ...
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#F5F7FA' },
   formContainer: { backgroundColor: '#fff', padding: 20, borderRadius: 15, elevation: 5 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#2563EB', textAlign: 'center', marginBottom: 5 },
   subtitle: { fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 30 },
-  input: { backgroundColor: '#F3F4F6', padding: 15, borderRadius: 10, marginBottom: 15, fontSize: 16 },
+  input: { backgroundColor: '#F3F4F6', padding: 15, borderRadius: 10, marginBottom: 15, fontSize: 16, color: '#000' },
   passwordContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 10, marginBottom: 15 },
-  passwordInput: { flex: 1, padding: 15, fontSize: 16 },
+  passwordInput: { flex: 1, padding: 15, fontSize: 16, color: '#000' },
   eyeIcon: { padding: 15 },
   button: { backgroundColor: '#2563EB', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 10 },
   buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
