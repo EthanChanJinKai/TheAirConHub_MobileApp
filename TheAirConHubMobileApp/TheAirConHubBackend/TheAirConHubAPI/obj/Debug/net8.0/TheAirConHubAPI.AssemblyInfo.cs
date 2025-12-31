@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TheAirConHubAPI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8e00ee9e73b01f284175960568fc2dc36840ddc7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+26f033ef90f140a3b2c05a7cf04e428955a2a768")]
 [assembly: System.Reflection.AssemblyProductAttribute("TheAirConHubAPI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TheAirConHubAPI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

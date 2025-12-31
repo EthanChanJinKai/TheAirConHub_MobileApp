@@ -7,11 +7,11 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import MenuItem from '../components/MenuItem';
 import { styles } from '../styles/AppStyles';
 
-const AccountScreen = ({ onShowToast }) => {
+// Accept refreshUserData
+const AccountScreen = ({ onShowToast, refreshUserData }) => {
   const navigation = useNavigation();
   const [userData, setUserData] = useState(null);
 
-  // Refresh data every time we visit this tab
   useFocusEffect(
     useCallback(() => {
       const loadUser = async () => {
@@ -30,6 +30,10 @@ const AccountScreen = ({ onShowToast }) => {
     await AsyncStorage.removeItem('userSession');
     setUserData(null);
     onShowToast('Logged out successfully');
+    
+    // --- TRIGGER REFRESH ---
+    if (refreshUserData) refreshUserData(); 
+    // -----------------------
   };
 
   return (
@@ -37,7 +41,6 @@ const AccountScreen = ({ onShowToast }) => {
       <View style={styles.accountHeader}>
         <Text style={styles.screenHeaderTitle}>Account</Text>
         
-        {/* --- CONDITIONAL HEADER --- */}
         {userData ? (
           <View style={styles.profileCard}>
             <View style={styles.profileAvatarContainer}>
@@ -50,9 +53,10 @@ const AccountScreen = ({ onShowToast }) => {
             </View>
           </View>
         ) : (
-          // SHOW THIS IF NOT LOGGED IN
           <View style={[styles.profileCard, { alignItems: 'center', justifyContent: 'center', paddingVertical: 30 }]}>
-            
+            <Text style={{ fontSize: 16, color: '#666', marginBottom: 15 }}>
+              Log in to save your game points!
+            </Text>
             <TouchableOpacity 
               style={{ backgroundColor: '#2563EB', paddingHorizontal: 30, paddingVertical: 10, borderRadius: 20, flexDirection: 'row', alignItems: 'center' }}
               onPress={() => navigation.navigate('Login')}
@@ -69,7 +73,6 @@ const AccountScreen = ({ onShowToast }) => {
         <MenuItem Icon={Settings} title="Account Settings" onPress={() => onShowToast('Settings - Coming soon!')} />
         <MenuItem Icon={HelpCircle} title="Help & Support" onPress={() => onShowToast('Help & Support - Coming soon!')} />
         
-        {/* Only show Logout if logged in */}
         {userData && (
           <MenuItem Icon={LogOut} title="Logout" onPress={handleLogout} showChevron={false} />
         )}

@@ -19,6 +19,9 @@ public partial class User
 
     public DateTime? CreatedAt { get; set; }
 
+    public DateTime? LastGameDate { get; set; } // Tracks the specific day
+    public int DailyAttempts { get; set; } = 0;
+
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
     public virtual ICollection<DailyGameActivity> DailyGameActivities { get; set; } = new List<DailyGameActivity>();

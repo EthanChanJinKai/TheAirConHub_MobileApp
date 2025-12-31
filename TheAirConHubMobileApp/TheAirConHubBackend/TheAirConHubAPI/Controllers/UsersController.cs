@@ -126,13 +126,66 @@ namespace TheAirConHubAPI.Controllers
                 newBalance = user.PointsBalance
             });
         }
-    } // <--- This closes the class UsersController
 
-    // Add this Class at the bottom, OUTSIDE the UsersController class but INSIDE the namespace
+        [HttpPost("StartGameAttempt")]
+        public async Task<IActionResult> StartGameAttempt([FromBody] GameAttemptRequest request)
+        {
+            var user = await _context.Users.FindAsync(request.UserId);
+
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            // 1. LAZY RESET: If last game was on a different day (or never), reset count
+            var serverTime = DateTime.UtcNow.AddHours(8); // Adjust to Singapore Time (UTC+8) if needed, or just use DateTime.Now for local server time
+            var today = serverTime.Date;
+
+            if (user.LastGameDate == null || user.LastGameDate.Value.Date != today)
+            {
+                user.DailyAttempts = 0;
+                user.LastGameDate = serverTime;
+            }
+
+            // 2. CHECK LIMIT
+            if (user.DailyAttempts >= 3)
+            {
+                return BadRequest(new
+                {
+                    canPlay = false,
+                    message = "Daily limit reached (3/3). Come back tomorrow!",
+                    attempts = user.DailyAttempts
+                });
+            }
+
+            // 3. INCREMENT & SAVE
+            user.DailyAttempts++;
+            user.LastGameDate = serverTime; // Update timestamp
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                canPlay = true,
+                attempts = user.DailyAttempts,
+                remaining = 3 - user.DailyAttempts
+            });
+        }
+
+
+    } 
+
+    
     public class AddPointsRequest
     {
         public int UserId { get; set; }
         public int Points { get; set; }
     }
+
     
+    public class GameAttemptRequest
+    {
+        public int UserId { get; set; }
+    }
+
 }

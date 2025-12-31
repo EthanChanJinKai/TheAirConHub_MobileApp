@@ -1123,6 +1123,37 @@
         }
       }
     },
+    "/api/Users/StartGameAttempt": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GameAttemptRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GameAttemptRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GameAttemptRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/WeatherForecast": {
       "get": {
         "tags": [
@@ -1260,6 +1291,16 @@
           },
           "user": {
             "$ref": "#/components/schemas/User"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GameAttemptRequest": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -1444,6 +1485,15 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "lastGameDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "dailyAttempts": {
+            "type": "integer",
+            "format": "int32"
           },
           "bookings": {
             "type": "array",

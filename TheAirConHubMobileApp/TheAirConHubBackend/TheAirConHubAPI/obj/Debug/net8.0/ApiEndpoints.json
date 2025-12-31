@@ -656,6 +656,22 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "TheAirConHubAPI.Controllers.UsersController",
+    "Method": "StartGameAttempt",
+    "RelativePath": "api/Users/StartGameAttempt",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "TheAirConHubAPI.Controllers.GameAttemptRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "TheAirConHubAPI.Controllers.WeatherForecastController",
     "Method": "Get",
     "RelativePath": "WeatherForecast",

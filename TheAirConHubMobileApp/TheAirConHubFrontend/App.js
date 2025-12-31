@@ -1,5 +1,5 @@
-// App.js
-import React, { useState, useEffect } from 'react';
+// src/App.js
+import React, { useState, useEffect, useCallback } from 'react';
 import { Platform, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
@@ -25,16 +25,26 @@ export default function App() {
   const [activeGameId, setActiveGameId] = useState(null); 
 
   const [points, setPoints] = useState(0); 
-  
-  // FIXED: Default route is now MainTabs (Home), not Login
-  const [initialRoute, setInitialRoute] = useState('MainTabs');
+  const [attemptsLeft, setAttemptsLeft] = useState(3);
 
-  // --- Check for existing session in background ---
-  const fetchUserPoints = async () => {
+  const [initialRoute, setInitialRoute] = useState('MainTabs');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // --- CENTRAL DATA FETCHING FUNCTION ---
+  // We wrap this in useCallback so we can pass it down efficiently
+  const fetchUserData = useCallback(async () => {
     try {
       const session = await AsyncStorage.getItem('userSession');
-      if (!session) return; // If no user, just stay at 0 points
       
+      // 1. HANDLE LOGGED OUT / GUEST
+      if (!session) {
+        setPoints(0);
+        setAttemptsLeft(3); // Reset to default for guests
+        setIsLoading(false);
+        return; 
+      }
+      
+      // 2. HANDLE LOGGED IN
       const user = JSON.parse(session);
       const response = await fetch(`${API_URL}/Users/${user.userId}`, {
         headers: { 'ngrok-skip-browser-warning': 'true' }
@@ -43,45 +53,54 @@ export default function App() {
       if (response.ok) {
         const data = await response.json();
         setPoints(data.pointsBalance || 0);
+
+        // Calc Daily Attempts
+        const today = new Date().toDateString();
+        const lastGameDate = data.lastGameDate ? new Date(data.lastGameDate).toDateString() : null;
+        
+        let usedAttempts = 0;
+        if (lastGameDate === today) {
+            usedAttempts = data.dailyAttempts || 0;
+        } 
+        setAttemptsLeft(Math.max(0, 3 - usedAttempts));
       }
     } catch (error) {
-      console.error("Failed to fetch points:", error);
+      console.error("Failed to fetch user data:", error);
+    } finally {
+      setIsLoading(false); 
     }
-  };
-
-  useEffect(() => {
-    fetchUserPoints();
   }, []);
+
+  // Initial Load
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
 
   const showToast = (message) => {
     setToastMessage(message);
     setToastVisible(true);
   };
 
-  // --- UPDATED: Handle Earn Points (Safe for Guest) ---
+  const hideToast = () => {
+    setToastVisible(false);
+  };
+
   const handleEarnPoints = async (earnedPoints) => {
     try {
       const session = await AsyncStorage.getItem('userSession');
-      
-      // 1. If NOT logged in, just show toast but don't save to DB
       if (!session) {
         showToast(`You earned ${earnedPoints} pts! (Login to save)`);
         return;
       }
-
       const user = JSON.parse(session);
 
-      // 2. If Logged In, save to SQL
       const response = await fetch(`${API_URL}/Users/AddPoints`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': 'true'
         },
-        body: JSON.stringify({ 
-          userId: user.userId, 
-          points: earnedPoints 
-        }),
+        body: JSON.stringify({ userId: user.userId, points: earnedPoints }),
       });
 
       if (response.ok) {
@@ -89,11 +108,9 @@ export default function App() {
         setPoints(data.newBalance); 
         showToast(`Saved! You earned ${earnedPoints} points.`);
       } else {
-        console.error("Failed to save points");
         showToast(`Error saving points`);
       }
     } catch (error) {
-      console.error("Connection Error:", error);
       showToast("Connection Error - Points not saved");
     }
   };
@@ -103,41 +120,92 @@ export default function App() {
     setGameVisible(true);
   };
 
+  const handleVerifyStartGame = async () => {
+    const session = await AsyncStorage.getItem('userSession');
+    if (!session) return true; 
+
+    const user = JSON.parse(session);
+
+    try {
+      const response = await fetch(`${API_URL}/Users/StartGameAttempt`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json', 
+          'ngrok-skip-browser-warning': 'true' 
+        },
+        body: JSON.stringify({ userId: user.userId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.canPlay) {
+        setAttemptsLeft(data.remaining);
+        showToast(`Game Started! Daily attempts left ${data.remaining}/3`);
+        return true; 
+      } else {
+        showToast("Daily attempts left 0/3. Come back tomorrow!");
+        return false; 
+      }
+    } catch (error) {
+      showToast("Connection Error");
+      return false;
+    }
+  };
+
   const Container = Platform.OS === 'web' ? View : SafeAreaView;
+
+  if (isLoading) {
+    return (
+      <View style={{flex:1, justifyContent:'center', alignItems:'center'}}>
+        <ActivityIndicator size="large" color="#2563EB" />
+      </View>
+    );
+  }
 
   return (
     <Container style={styles.safeArea}>
       <NavigationContainer>
         <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
           
-          {/* Main App acts as the Landing Page now */}
+          {/* PASS refreshUserData DOWN TO TABS */}
           <Stack.Screen name="MainTabs">
             {() => (
               <TabNavigator
                 showToast={showToast}
                 onOpenGame={handleOpenGame}
                 points={points} 
+                attemptsLeft={attemptsLeft}
+                refreshUserData={fetchUserData} // <--- NEW PROP
               />
             )}
           </Stack.Screen>
 
-          {/* Auth Screens accessible from Account Screen */}
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
+          {/* PASS refreshUserData DOWN TO LOGIN/REGISTER */}
+          <Stack.Screen name="Login">
+            {(props) => <LoginScreen {...props} refreshUserData={fetchUserData} />}
+          </Stack.Screen>
           
+          <Stack.Screen name="Register">
+            {(props) => <RegisterScreen {...props} refreshUserData={fetchUserData} />}
+          </Stack.Screen>
+
         </Stack.Navigator>
       </NavigationContainer>
 
       <ToastMessage
         visible={toastVisible}
         message={toastMessage}
-        onHide={() => setToastVisible(false)}
+        onHide={hideToast}
       />
       <GameModal
         visible={gameVisible}
-        gameId={activeGameId}
+        initialGameKey={activeGameId}
         onClose={() => setGameVisible(false)}
         onEarnPoints={handleEarnPoints}
+        onStartGame={handleVerifyStartGame}
+        toastVisible={toastVisible}
+        toastMessage={toastMessage}
+        onHideToast={hideToast}
       />
     </Container>
   );

@@ -1,28 +1,30 @@
 // src/screens/RewardsScreen.js
-
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { Star, Trophy, Gamepad2, ChevronRight } from 'lucide-react-native'; 
-import { useFocusEffect } from '@react-navigation/native'; 
-import AsyncStorage from '@react-native-async-storage/async-storage'; 
-import { API_URL } from '../config';
+import { Star, Trophy, Gamepad2, ChevronRight, AlertCircle } from 'lucide-react-native'; 
+import { useFocusEffect } from '@react-navigation/native'; // Import this
 import { styles } from '../styles/AppStyles';
 
-const PlayGamesButton = ({ onOpenGame }) => {
+const PlayGamesButton = ({ onOpenGame, attemptsLeft }) => {
+  const isOutOfAttempts = attemptsLeft === 0;
   return (
     <View style={styles.dropdownContainer}>
       <TouchableOpacity
-        style={styles.gameBanner}
+        style={[styles.gameBanner, isOutOfAttempts && { opacity: 0.8, backgroundColor: '#64748B' }]}
         onPress={() => onOpenGame('unlimited_play')}
       >
         <View style={styles.gameBannerContent}>
           <View style={{ marginRight: 15 }}>
-            <Gamepad2 size={32} color="white" />
+            {isOutOfAttempts ? <AlertCircle size={32} color="#CBD5E1" /> : <Gamepad2 size={32} color="white" />}
           </View>
           <View style={styles.gameBannerText}>
-            <Text style={styles.gameBannerTitle}>Play Games & Earn Rewards</Text>
+            <Text style={styles.gameBannerTitle}>
+                {isOutOfAttempts ? "Daily Limit Reached" : "Play Games & Earn Rewards"}
+            </Text>
             <Text style={styles.gameBannerSubtitle}>
-              Play anytime to earn points for discounts!
+              {isOutOfAttempts 
+                ? "Come back tomorrow for more tries!" 
+                : `${attemptsLeft}/3 Daily Attempts Remaining`}
             </Text>
           </View>
           <ChevronRight size={24} color="white" />
@@ -32,45 +34,18 @@ const PlayGamesButton = ({ onOpenGame }) => {
   );
 };
 
-// -------------------------------------------------------------------------
-
-const RewardsScreen = ({ onShowToast, onOpenGame, points: initialPoints }) => {
-  const [currentPoints, setCurrentPoints] = useState(initialPoints || 0);
-
-  useEffect(() => {
-    setCurrentPoints(initialPoints);
-  }, [initialPoints]);
-
+// Accept 'refreshUserData'
+const RewardsScreen = ({ onShowToast, onOpenGame, points, attemptsLeft, refreshUserData }) => {
+  
+  // --- REFRESH DATA WHENEVER SCREEN IS FOCUSED ---
   useFocusEffect(
     useCallback(() => {
-      const fetchUserData = async () => {
-        try {
-          const session = await AsyncStorage.getItem('userSession');
-          
-          // --- FIX: If no session, just stop here (don't call API) ---
-          if (!session) {
-            setCurrentPoints(0); 
-            return;
-          }
-          // -----------------------------------------------------------
-
-          const user = JSON.parse(session);
-          const response = await fetch(`${API_URL}/Users/${user.userId}`, {
-            headers: { 'ngrok-skip-browser-warning': 'true' }
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            setCurrentPoints(data.pointsBalance || 0); 
-          }
-        } catch (error) {
-          console.error("Failed to fetch points:", error);
-        }
-      };
-
-      fetchUserData();
-    }, [])
+      if (refreshUserData) {
+        refreshUserData(); // Ask App.js to fetch latest points/attempts
+      }
+    }, [refreshUserData])
   );
+  // -----------------------------------------------
 
   const rewards = [
     { title: '$10 Service Discount', points: 500, available: true },
@@ -81,21 +56,17 @@ const RewardsScreen = ({ onShowToast, onOpenGame, points: initialPoints }) => {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header Section */}
       <View style={styles.rewardsHeader}>
         <Text style={styles.screenHeaderTitle}>Rewards</Text>
         <View style={styles.pointsCard}>
           <Star size={48} color="#FBBF24" fill="#FBBF24" />
-          
-          {/* Displays the synced points */}
-          <Text style={styles.pointsValue}>{currentPoints}</Text>
-          
+          <Text style={styles.pointsValue}>{points}</Text>
           <Text style={styles.pointsLabel}>Points Available</Text>
         </View>
       </View>
 
       <View style={styles.rewardsContent}>
-        <PlayGamesButton onOpenGame={onOpenGame} />
+        <PlayGamesButton onOpenGame={onOpenGame} attemptsLeft={attemptsLeft} />
 
         <Text style={styles.sectionTitle}>Available Rewards</Text>
         {rewards.map((reward, idx) => (
@@ -107,29 +78,12 @@ const RewardsScreen = ({ onShowToast, onOpenGame, points: initialPoints }) => {
                 <Text style={styles.rewardPointsText}>{reward.points} points</Text>
               </View>
             </View>
-            
             <TouchableOpacity
-              style={[
-                styles.redeemButton,
-                (!reward.available || currentPoints < reward.points) &&
-                  styles.redeemButtonDisabled,
-              ]}
-              onPress={() =>
-                reward.available && currentPoints >= reward.points
-                  ? onShowToast(`Redeemed: ${reward.title}!`)
-                  : onShowToast('Not enough points!')
-              }
-              disabled={!reward.available || currentPoints < reward.points}
+              style={[styles.redeemButton, (!reward.available || points < reward.points) && styles.redeemButtonDisabled]}
+              onPress={() => reward.available && points >= reward.points ? onShowToast(`Redeemed: ${reward.title}!`) : onShowToast('Not enough points!')}
+              disabled={!reward.available || points < reward.points}
             >
-              <Text
-                style={[
-                  styles.redeemButtonText,
-                  (!reward.available || currentPoints < reward.points) &&
-                    styles.redeemButtonTextDisabled,
-                ]}
-              >
-                Redeem
-              </Text>
+              <Text style={[styles.redeemButtonText, (!reward.available || points < reward.points) && styles.redeemButtonTextDisabled]}>Redeem</Text>
             </TouchableOpacity>
           </View>
         ))}
