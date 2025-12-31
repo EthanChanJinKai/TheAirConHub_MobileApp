@@ -13,17 +13,17 @@ const isDesktop = width >= 768;
 const getResponsiveStyles = () => {
   if (isDesktop) {
     return {
-      headerPadding: 12,
-      headerFontSize: 20,
-      sectionMargin: 15,
-      controlsPadding: 20,
-      knobWidth: '45%',
-      buttonPaddingVertical: 15,
-      buttonFontSize: 18,
-      statusPadding: 12,
-      titleFontSize: 18,
-      knobBaseSize: 90, // Explicit size for desktop
-      waveHeight: 120, // Explicit height for desktop
+      headerPadding: 6,
+      headerFontSize: 18,
+      sectionMargin: 8,
+      controlsPadding: 12,
+      knobWidth: "45%",
+      buttonPaddingVertical: 10,
+      buttonFontSize: 16,
+      statusPadding: 8,
+      titleFontSize: 16,
+      knobBaseSize: 75,
+      waveHeight: 90,
     };
   } else {
     return {
@@ -31,7 +31,7 @@ const getResponsiveStyles = () => {
       headerFontSize: 16,
       sectionMargin: 8,
       controlsPadding: 12,
-      knobWidth: '48%',
+      knobWidth: "48%",
       buttonPaddingVertical: 10,
       buttonFontSize: 14,
       statusPadding: 8,
@@ -44,6 +44,7 @@ const getResponsiveStyles = () => {
 const GasTypes = {
   NATURAL_GAS: {
     name: "Natural Gas",
+    element: "CH4",
     color: "#3b82f6",
     hazard: "High",
     repair: "Pipe seal + ventilation",
@@ -52,6 +53,7 @@ const GasTypes = {
   },
   PROPANE: {
     name: "Propane",
+    element: "C3H8",
     color: "#f59e0b",
     hazard: "Critical",
     repair: "Tank replacement + valve",
@@ -60,6 +62,7 @@ const GasTypes = {
   },
   CARBON_MONOXIDE: {
     name: "Carbon Monoxide",
+    element: "CO",
     color: "#ef4444",
     hazard: "Extreme",
     repair: "Source isolation + alarm",
@@ -68,6 +71,7 @@ const GasTypes = {
   },
   METHANE: {
     name: "Methane",
+    element: "CH4",
     color: "#10b981",
     hazard: "Moderate",
     repair: "Leak patch + monitor",
@@ -129,9 +133,8 @@ const FindTheLeakGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
 
     if (quality >= 90) {
       setGameState("correct");
-      
-      // --- NEW SCORING LOGIC ---
-      // Round 1 = 10pts, Round 2 = 30pts, Round 3 = 50pts
+
+      // Calculate points
       let roundPoints = 0;
       if (round === 1) roundPoints = 10;
       else if (round === 2) roundPoints = 30;
@@ -140,18 +143,19 @@ const FindTheLeakGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
       setScore((s) => s + roundPoints);
 
       if (!isPracticeMode) {
-        onEarnPoints(roundPoints); // Send fixed points
+        onEarnPoints(roundPoints);
       }
-      // -------------------------
 
+      // Wait for the overlay to show before changing rounds
       setTimeout(() => {
         if (round < 3) {
-          setRound(round + 1);
+          setRound((prevRound) => prevRound + 1);
+          // This resets currentGas for the NEXT round
           startNewRound();
         } else {
           setGameState("gameover");
         }
-      }, 1500);
+      }, 1500); // This matches your display time
     } else {
       setGameState("wrong");
       setTimeout(() => setGameState("playing"), 1000);
@@ -236,16 +240,20 @@ const FindTheLeakGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
   return (
     <View style={styles.gameCard}>
       {/* Header with responsive padding */}
-      <View style={[
-        styles.leakGameHeader,
-        { padding: responsiveStyles.headerPadding }
-      ]}>
+      <View
+        style={[
+          styles.leakGameHeader,
+          { padding: responsiveStyles.headerPadding },
+        ]}
+      >
         <View style={styles.leakGameHeaderItem}>
           <Text style={styles.leakGameHeaderLabel}>Round</Text>
-          <Text style={[
-            styles.leakGameHeaderValue,
-            { fontSize: responsiveStyles.headerFontSize }
-          ]}>
+          <Text
+            style={[
+              styles.leakGameHeaderValue,
+              { fontSize: responsiveStyles.headerFontSize },
+            ]}
+          >
             {round}/{3}
           </Text>
         </View>
@@ -263,48 +271,76 @@ const FindTheLeakGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
         </View>
       </View>
 
-      {/* Status Messages */}
-      {gameState === "correct" && (
-        <View style={[
-          styles.leakGameSuccessMessage,
-          { 
-            padding: responsiveStyles.statusPadding,
-            marginBottom: responsiveStyles.sectionMargin 
-          }
-          ]}>
-          <CheckCircle size={24} color="#A7F3D0" />
-          <View style={{ flex: 1, paddingLeft: 10 }}>
-            <Text style={styles.leakGameStatusTitle}>Perfect Match!</Text>
-            <Text style={styles.leakGameStatusText}>
-              {currentGas.name} identified - {currentGas.hazard} Hazard -
-              Repair: {currentGas.repair}
-            </Text>
+      {/* Status Overlays */}
+      {(gameState === "correct" || gameState === "wrong") && (
+        <View
+          style={[
+            styles.overlayStyle,
+            {
+              // Transparent Green for correct, Transparent Red for wrong
+              backgroundColor:
+                gameState === "correct"
+                  ? "rgba(16, 185, 129, 0.9)" // Increased opacity for "fill" effect
+                  : "rgba(239, 68, 68, 0.9)",
+              borderColor: gameState === "correct" ? "#10B981" : "#EF4444",
+            },
+          ]}
+        >
+          <View
+            style={{
+              padding: 24,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {gameState === "correct" ? (
+              <CheckCircle size={64} color="white" /> // Larger icon
+            ) : (
+              <AlertCircle size={64} color="white" />
+            )}
+
+            <View style={{ alignItems: "center", marginTop: 16 }}>
+              <Text
+                style={[
+                  styles.leakGameStatusTitle,
+                  { color: "white", fontSize: 24 }, // Larger, white text
+                ]}
+              >
+                {gameState === "correct"
+                  ? "Perfect Match!"
+                  : "Calibration Failed"}
+              </Text>
+              <Text
+                style={{
+                  color: "white",
+                  textAlign: "center",
+                  marginTop: 8,
+                  fontSize: 16,
+                }}
+              >
+                {gameState === "correct"
+                  ? `\n${currentGas?.element || ""} \n${
+                      currentGas?.name || "Gas"
+                    } identified!\nPreparing next round...`
+                  : "Match quality too low.\nAdjust frequency/amplitude."}
+              </Text>
+            </View>
           </View>
         </View>
       )}
 
-      {gameState === "wrong" && (
-        <View style={styles.leakGameWarningMessage}>
-          <AlertCircle size={24} color="#FCD34D" />
-          <View style={{ flex: 1, paddingLeft: 10 }}>
-            <Text style={styles.leakGameStatusTitle}>
-              Match Quality Too Low
-            </Text>
-            <Text style={styles.leakGameStatusText}>
-              Need ≥90% match to lock in. Keep adjusting!
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {gameState === "playing" && (
-        <View style={{ height: 10 }} /> 
-      )}
+      {gameState === "playing" && <View style={{ height: 10 }} />}
 
       {/* Target Waveform */}
       {currentGas && (
-        <View style={styles.leakGameSection}>
+        <View
+          style={[
+            styles.leakGameSection,
+            { marginBottom: responsiveStyles.sectionMargin },
+          ]}
+        >
           <SineWaveDisplay
+            height={responsiveStyles.waveHeight} // Pass the height here
             frequency={currentGas.frequency}
             amplitude={currentGas.amplitude}
             color={currentGas.color}
@@ -315,8 +351,14 @@ const FindTheLeakGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
       )}
 
       {/* User Waveform */}
-      <View style={styles.leakGameSection}>
+      <View
+        style={[
+          styles.leakGameSection,
+          { marginBottom: responsiveStyles.sectionMargin },
+        ]}
+      >
         <SineWaveDisplay
+          height={responsiveStyles.waveHeight} // Pass the height here
           frequency={userFrequency}
           amplitude={userAmplitude}
           color="#9ca3af"
@@ -326,14 +368,18 @@ const FindTheLeakGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
       </View>
 
       {/* Rotating Knob Controls */}
-      <View style={[
-        styles.leakGameControlsContainer,
-        { padding: responsiveStyles.controlsPadding }
-      ]}>
-        <Text style={[
-          styles.leakGameControlsTitle,
-          { fontSize: responsiveStyles.titleFontSize }
-        ]}>
+      <View
+        style={[
+          styles.leakGameControlsContainer,
+          { padding: responsiveStyles.controlsPadding },
+        ]}
+      >
+        <Text
+          style={[
+            styles.leakGameControlsTitle,
+            { fontSize: responsiveStyles.titleFontSize },
+          ]}
+        >
           Calibration Controls
         </Text>
         <View style={styles.leakGameKnobRow}>
@@ -371,10 +417,12 @@ const FindTheLeakGame = ({ onEarnPoints, onEndGame, isPracticeMode }) => {
               : styles.leakGameLockButtonInactive,
           ]}
         >
-          <Text style={[
-            styles.leakGameLockButtonText,
-            { fontSize: responsiveStyles.buttonFontSize }
-          ]}>
+          <Text
+            style={[
+              styles.leakGameLockButtonText,
+              { fontSize: responsiveStyles.buttonFontSize },
+            ]}
+          >
             {matchQuality >= 90
               ? "🔒 LOCK SIGNATURE"
               : `MATCH ${matchQuality}% (Need ≥90%)`}

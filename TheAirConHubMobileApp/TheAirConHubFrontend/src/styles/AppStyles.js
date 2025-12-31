@@ -893,60 +893,70 @@ export const styles = StyleSheet.create({
   // --- Rotating Knob Styles ---
   // In your AppStyles.js, update the styles:
 
-rotatingKnobContainer: {
-  alignItems: 'center',
-  margin: 10,
-},
+  rotatingKnobContainer: {
+    alignItems: "center",
+    margin: 10,
+  },
 
-rotatingKnobLabel: {
-  fontSize: 14,
-  color: '#fff',
-  marginBottom: 8,
-  fontWeight: 'bold',
-},
+  rotatingKnobLabel: {
+    fontSize: 14,
+    color: "#fff",
+    marginBottom: 8,
+    fontWeight: "bold",
+  },
 
-rotatingKnobWrapper: {
-  alignItems: 'center',
-  justifyContent: 'center',
-},
+  rotatingKnobWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
-rotatingKnobBase: {
-  width: 80,
-  height: 80,
-  borderRadius: 40,
-  backgroundColor: '#2a2a2a',
-  alignItems: 'center',
-  justifyContent: 'center',
-  borderWidth: 2,
-  borderColor: '#555',
-  position: 'relative',
-},
+  rotatingKnobBase: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#2a2a2a",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#555",
+    position: "relative",
+  },
 
-rotatingKnob: {
-  width: 70,
-  height: 70,
-  borderRadius: 35,
-  backgroundColor: '#444',
-  alignItems: 'center',
-  justifyContent: 'center',
-  borderWidth: 1,
-  borderColor: '#666',
-},
+  rotatingKnob: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: "#444",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#666",
+  },
 
-rotatingKnobIndicator: {
-  width: 4,
-  height: 20,
-  backgroundColor: '#fff',
-  position: 'absolute',
-  top: 5,
-},
+  rotatingKnobIndicator: {
+    width: 4,
+    height: 20,
+    backgroundColor: "#fff",
+    position: "absolute",
+    top: 5,
+  },
 
-rotatingKnobCenter: {
-  width: 8,
-  height: 8,
-  borderRadius: 4,
-  backgroundColor: '#888',
-  position: 'absolute',
-},
+  rotatingKnobCenter: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#888",
+    position: "absolute",
+  },
+
+  overlayStyle: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 9999,
+    elevation: 10,
+    borderRadius: 24, 
+    justifyContent: "center",
+    alignItems: "center", 
+    borderWidth: 2,
+  },
   // endregion
 });
