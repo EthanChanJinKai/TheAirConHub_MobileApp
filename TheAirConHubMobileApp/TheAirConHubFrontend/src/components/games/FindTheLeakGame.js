@@ -44,7 +44,7 @@ const getResponsiveStyles = () => {
 const GasTypes = {
   NATURAL_GAS: {
     name: "Natural Gas",
-    element: "CH4",
+    icon: require("../../../assets/findtheleak/natural_gas.jpg"),
     color: "#3b82f6",
     hazard: "High",
     repair: "Pipe seal + ventilation",
@@ -53,7 +53,7 @@ const GasTypes = {
   },
   PROPANE: {
     name: "Propane",
-    element: "C3H8",
+    icon: require("../../../assets/findtheleak/propane_gas.png"),
     color: "#f59e0b",
     hazard: "Critical",
     repair: "Tank replacement + valve",
@@ -62,7 +62,7 @@ const GasTypes = {
   },
   CARBON_MONOXIDE: {
     name: "Carbon Monoxide",
-    element: "CO",
+    icon: require("../../../assets/findtheleak/carbon_monoxide.png"),
     color: "#ef4444",
     hazard: "Extreme",
     repair: "Source isolation + alarm",
@@ -71,7 +71,7 @@ const GasTypes = {
   },
   METHANE: {
     name: "Methane",
-    element: "CH4",
+    icon: require("../../../assets/findtheleak/methane_gas.png"),
     color: "#10b981",
     hazard: "Moderate",
     repair: "Leak patch + monitor",
